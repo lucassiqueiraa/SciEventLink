@@ -14,7 +14,7 @@ This project integrates three core disciplines:
 * **SIS (Services):** The RESTful API serving data to the mobile client.
 * **AMSI (Mobile Access):** The mobile application for participants' in-loco experience.
 
-## ✨ Key Features
+## ✨ Key Features111<
 
 ### Web (PLSI)
 * **Admin Dashboard:** Manages Organizers (Create/Suspend).
@@ -33,10 +33,14 @@ This project integrates three core disciplines:
 
 ## 🛠️ Tech Stack
 
-* **Backend (Web & API):** PHP 8+ (Yii2 Framework)
-* **Database:** MySQL 8+ (InnoDB)
-* **Frontend (Web):** HTML5, CSS3, JavaScript, Bootstrap
-* **Design:** Figma
+* **Backend (Web & API):** PHP 8+ com **Yii2 Framework**
+* **Database (Principal):** **MySQL 8+ (InnoDB)**
+* **Frontend (Web):** HTML5, CSS3, JavaScript, **Bootstrap**
+
+* **Cliente Móvel (AMSI):** **Java** e **Android Studio**
+* **Comunicação Móvel:** **Biblioteca Volley** (Consumo da API RESTful)
+* **Base de Dados Local (Cache):** **SQLite** (Para funcionalidade Offline)
+* **Design & Gestão:** Figma / Jira
 
 ## 🚀 Getting Started
 
