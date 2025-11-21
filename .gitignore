@@ -1,0 +1,67 @@
+# =======================
+# GERAL DO SISTEMA & IDEs
+# =======================
+.idea/
+.vscode/
+nbproject/
+.buildpath
+.project
+.settings
+Thumbs.db
+.DS_Store
+
+# =======================
+# WEBAPP (Yii2 Framework)
+# =======================
+
+# --- Dependências ---
+WebApp/vendor/
+WebApp/composer.phar
+
+# --- Comandos Console ---
+WebApp/yii
+WebApp/yii_test
+WebApp/yii_test.bat
+
+# --- SEGURANÇA (Arquivos com Senhas do Banco) ---
+# O teu antigo não tinha isto explícito com o caminho WebApp. É vital!
+WebApp/common/config/main-local.php
+WebApp/common/config/params-local.php
+WebApp/frontend/config/main-local.php
+WebApp/frontend/config/params-local.php
+WebApp/backend/config/main-local.php
+WebApp/backend/config/params-local.php
+WebApp/console/config/main-local.php
+WebApp/console/config/params-local.php
+
+# --- Arquivos Gerados pelo 'php init' ---
+WebApp/frontend/web/index.php
+WebApp/frontend/web/index-test.php
+WebApp/frontend/web/robots.txt
+WebApp/backend/web/index.php
+WebApp/backend/web/index-test.php
+WebApp/backend/web/robots.txt
+
+# --- Logs, Cache e Assets Temporários ---
+WebApp/*/runtime/*
+WebApp/*/web/assets/*
+# Mantém o .gitignore dentro dessas pastas para que a pasta vazia suba
+!WebApp/*/runtime/.gitignore
+!WebApp/*/web/assets/.gitignore
+
+# --- Testes e Vagrant ---
+WebApp/phpunit.phar
+WebApp/phpunit.xml
+WebApp/.vagrant/
+WebApp/codeception.yml
+
+# =======================
+# MOBILE APP (Android)
+# =======================
+# (Preparado para quando criares a pasta mobile)
+mobile/.gradle/
+mobile/local.properties
+mobile/.idea/
+mobile/build/
+mobile/app/build/
+*.iml
