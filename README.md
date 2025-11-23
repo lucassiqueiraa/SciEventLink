@@ -16,14 +16,14 @@ This project integrates three core disciplines:
 
 ## ✨ Key Features
 
-### Web (PLSI)
+### Web
 * **Admin Dashboard:** Manages Organizers (Create/Suspend).
 * **Organizer Dashboard:** Creates and manages events (deadlines, rooms, fees).
 * **Scientific Workflow:** Manages the blind peer-review process (assigning reviewers, accepting/rejecting papers).
 * **Q&A Moderation:** Live dashboard for approving questions sent from the mobile app.
 * **Front-Office:** Event catalog, user registration, and author paper submission.
 
-### Mobile (AMSI & SIS)
+### Mobile
 * **Optimized Agenda:** A high-performance Master-Detail view of the event schedule.
 * **My Agenda:** Ability to "Favorite" sessions to create a personal schedule.
 * **Live Interaction:**
