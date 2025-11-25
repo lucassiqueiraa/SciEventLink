@@ -56,6 +56,8 @@ AppAsset::register($this);
     }
     NavBar::end();
     ?>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 </header>
 
 <main role="main" class="flex-shrink-0">

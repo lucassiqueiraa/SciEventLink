@@ -8,6 +8,7 @@ use yii\behaviors\TimestampBehavior;
 use yii\db\ActiveRecord;
 use yii\web\IdentityInterface;
 
+
 /**
  * User model
  *
@@ -209,5 +210,27 @@ class User extends ActiveRecord implements IdentityInterface
     public function removePasswordResetToken()
     {
         $this->password_reset_token = null;
+    }
+
+    public function getUserProfile()
+    {
+        return $this->hasOne(UserProfile::class, ['user_id' => 'id']);
+    }
+
+    public function toggleStatus()
+    {
+        if ($this->status === self::STATUS_ACTIVE) {
+            $this->status = self::STATUS_INACTIVE;
+        }
+        else {
+            $this->status = self::STATUS_ACTIVE;
+        }
+
+        return $this->save(false);
+    }
+
+    public function isSuspended()
+    {
+        return $this->status !== self::STATUS_ACTIVE;
     }
 }
