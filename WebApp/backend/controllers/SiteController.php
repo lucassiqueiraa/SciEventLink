@@ -2,7 +2,10 @@
 
 namespace backend\controllers;
 
+use common\models\Event;
 use common\models\LoginForm;
+use common\models\User;
+use common\models\UserProfile;
 use Yii;
 use yii\filters\VerbFilter;
 use yii\filters\AccessControl;
@@ -62,7 +65,20 @@ class SiteController extends Controller
      */
     public function actionIndex()
     {
-        return $this->render('index');
+        $totalParticipants = UserProfile::find()->where(['role' => 'PART'])->count();
+
+        $totalOrganizers = UserProfile::find()->where(['role' => 'ORG'])->count();
+
+        $totalEvents = Event::find()->count();
+
+        $suspendedUsers = User::find()->where(['not', ['status' => 10]])->count();
+
+        return $this->render('index', [
+            'totalParticipants' => $totalParticipants,
+            'totalOrganizers' => $totalOrganizers,
+            'totalEvents' => $totalEvents,
+            'suspendedUsers' => $suspendedUsers,
+        ]);
     }
 
     /**
