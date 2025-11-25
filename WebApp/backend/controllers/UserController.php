@@ -75,8 +75,6 @@ class UserController extends Controller
         if ($model->load($this->request->post()) && $model->signup()) {
             Yii::$app->session->setFlash('success', 'Organizador criado com sucesso!');
             return $this->redirect(['index']);
-        } else {
-            $model->loadDefaultValues();
         }
 
         return $this->render('create', [
