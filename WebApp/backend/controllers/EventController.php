@@ -4,6 +4,8 @@ namespace backend\controllers;
 
 use common\models\Event;
 use backend\models\EventSearch;
+use common\models\OrganizerEvent;
+use Yii;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
@@ -70,11 +72,31 @@ class EventController extends Controller
         $model = new Event();
 
         if ($this->request->isPost) {
-            if ($model->load($this->request->post()) && $model->save()) {
-                return $this->redirect(['view', 'id' => $model->id]);
+            if ($model->load($this->request->post())) {
+
+                $transaction = \Yii::$app->db->beginTransaction();
+
+                try {
+                    if (!$model->save()) {
+                        throw new \Exception('Erro ao salvar evento.');
+                    }
+                    $relation = new OrganizerEvent();
+                    $relation->event_id = $model->id; // ID do evento recém-criado
+                    $relation->user_id = \Yii::$app->user->id; // ID de quem está logado
+                    $relation->role_description = 'Criador/Dono';
+
+                    if (!$relation->save()) {
+                        throw new \Exception('Erro ao associar organizador.');
+                    }
+
+                    $transaction->commit();
+                    return $this->redirect(['view', 'id' => $model->id]);
+
+                } catch (\Exception $e) {
+                    $transaction->rollBack();
+                    \Yii::$app->session->setFlash('error', $e->getMessage());
+                }
             }
-        } else {
-            $model->loadDefaultValues();
         }
 
         return $this->render('create', [

@@ -56,6 +56,7 @@ class Event extends \yii\db\ActiveRecord
             [['start_date', 'end_date', 'submission_deadline', 'evaluation_deadline'], 'safe'],
             [['name'], 'string', 'max' => 255],
             ['status', 'in', 'range' => array_keys(self::optsStatus())],
+            [['end_date', 'submission_deadline', 'evaluation_deadline'], 'validateDates'],
         ];
     }
 
@@ -220,4 +221,52 @@ class Event extends \yii\db\ActiveRecord
     {
         $this->status = self::STATUS_FINISHED;
     }
+
+    /**
+     * Valida toda a cronologia do evento
+     */
+    public function validateDates($attribute, $params)
+    {
+        if ($this->hasErrors()) {
+            return;
+        }
+
+        $start = strtotime($this->start_date);
+        $end = strtotime($this->end_date);
+
+        // Só converte se existirem (para evitar erros em campos vazios)
+        $subDeadline = $this->submission_deadline ? strtotime($this->submission_deadline) : null;
+        $evalDeadline = $this->evaluation_deadline ? strtotime($this->evaluation_deadline) : null;
+
+        // Verificamos qual campo estamos a validar agora ($attribute)
+        // e aplicamos a regra específica para ele.
+
+        switch ($attribute) {
+
+            case 'end_date':
+                if ($end < $start) {
+                    $this->addError($attribute, 'End date must be after start date');
+                }
+                break;
+
+            case 'submission_deadline':
+                if ($subDeadline > $start) {
+                    $this->addError($attribute, 'A submissão deve fechar antes do evento começar.');
+                }
+                break;
+
+            case 'evaluation_deadline':
+                if ($subDeadline && $evalDeadline < $subDeadline) {
+                    $this->addError($attribute, 'The Evaluation Deadline must be after the Submission Deadline.');
+                }
+                if ($evalDeadline > $start) {
+                    $this->addError($attribute, 'The Evaluation must be completed before the start of the Event.');
+                }
+                break;
+        }
+    }
+
+
+
+
 }
