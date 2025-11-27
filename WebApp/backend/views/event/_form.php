@@ -1,7 +1,8 @@
 <?php
 
 use yii\helpers\Html;
-use yii\widgets\ActiveForm;
+use yii\bootstrap5\ActiveForm;
+use yii\bootstrap5\Tabs; // Importar o Widget de Abas
 
 /** @var yii\web\View $this */
 /** @var common\models\Event $model */
@@ -12,22 +13,28 @@ use yii\widgets\ActiveForm;
 
     <?php $form = ActiveForm::begin(); ?>
 
-    <?= $form->field($model, 'name')->textInput(['maxlength' => true]) ?>
+    <?php
+    // Definição das Abas
+    echo Tabs::widget([
+            'items' => [
+                    [
+                            'label' => 'Informações Gerais',
+                            'content' => $this->render('_form_general', ['form' => $form, 'model' => $model]),
+                            'active' => true
+                    ],
+                    [
+                            'label' => 'Cronograma & Prazos',
+                            'content' => $this->render('_form_dates', ['form' => $form, 'model' => $model]),
+                    ],
+                // No futuro, adicionaremos aqui as abas 'Salas' e 'Bilhetes'
+            ],
+            'navType' => 'nav-tabs',
+            'encodeLabels' => false,
+    ]);
+    ?>
 
-    <?= $form->field($model, 'description')->textarea(['rows' => 6]) ?>
-
-    <?= $form->field($model, 'start_date')->textInput() ?>
-
-    <?= $form->field($model, 'end_date')->textInput() ?>
-
-    <?= $form->field($model, 'submission_deadline')->textInput() ?>
-
-    <?= $form->field($model, 'evaluation_deadline')->textInput() ?>
-
-    <?= $form->field($model, 'status')->dropDownList([ 'open' => 'Open', 'closed' => 'Closed', 'running' => 'Running', 'finished' => 'Finished', ], ['prompt' => '']) ?>
-
-    <div class="form-group">
-        <?= Html::submitButton('Save', ['class' => 'btn btn-success']) ?>
+    <div class="form-group mt-4">
+        <?= Html::submitButton('Salvar Evento', ['class' => 'btn btn-success']) ?>
     </div>
 
     <?php ActiveForm::end(); ?>

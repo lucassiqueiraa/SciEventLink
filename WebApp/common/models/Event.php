@@ -51,7 +51,7 @@ class Event extends \yii\db\ActiveRecord
         return [
             [['description', 'submission_deadline', 'evaluation_deadline'], 'default', 'value' => null],
             [['status'], 'default', 'value' => 'open'],
-            [['name', 'start_date', 'end_date'], 'required'],
+            [['name', 'start_date', 'end_date', 'submission_deadline', 'evaluation_deadline'], 'required'],
             [['description', 'status'], 'string'],
             [['start_date', 'end_date', 'submission_deadline', 'evaluation_deadline'], 'safe'],
             [['name'], 'string', 'max' => 255],
