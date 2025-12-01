@@ -24,6 +24,11 @@ $this->params['breadcrumbs'][] = $this->title;
                 'method' => 'post',
             ],
         ]) ?>
+
+        <?= Html::a('<i class="fas fa-building"></i> Gerir Salas',
+                ['venue/index', 'VenueSearch[event_id]' => $model->id],
+                ['class' => 'btn btn-info'])
+        ?>
     </p>
 
     <?= DetailView::widget([

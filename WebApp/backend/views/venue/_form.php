@@ -1,5 +1,7 @@
 <?php
 
+use common\models\Event;
+use yii\helpers\ArrayHelper;
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
 
@@ -12,7 +14,20 @@ use yii\widgets\ActiveForm;
 
     <?php $form = ActiveForm::begin(); ?>
 
-    <?= $form->field($model, 'event_id')->textInput() ?>
+    <?php
+    if ($model->event_id) {
+        echo $form->field($model, 'event_id')->hiddenInput()->label(false);
+
+        if ($model->event) {
+            echo '<div class="alert alert-info">Adicionando sala ao evento: <b>' . $model->event->name . '</b></div>';
+        }
+    } else {
+        echo $form->field($model, 'event_id')->dropDownList(
+                ArrayHelper::map(Event::find()->all(), 'id', 'name'),
+                ['prompt' => 'Selecione um Evento...']
+        );
+    }
+    ?>
 
     <?= $form->field($model, 'name')->textInput(['maxlength' => true]) ?>
 

@@ -1,6 +1,8 @@
 <?php
 
+use common\models\Event;
 use common\models\Venue;
+use yii\helpers\ArrayHelper;
 use yii\helpers\Html;
 use yii\helpers\Url;
 use yii\grid\ActionColumn;
@@ -18,7 +20,9 @@ $this->params['breadcrumbs'][] = $this->title;
     <h1><?= Html::encode($this->title) ?></h1>
 
     <p>
-        <?= Html::a('Create Venue', ['create'], ['class' => 'btn btn-success']) ?>
+        <?php $event_id = Yii::$app->request->getQueryParam('VenueSearch')['event_id'] ?? null; ?>
+
+        <?= Html::a('Create Venue', ['create', 'event_id' => $event_id], ['class' => 'btn btn-success']) ?>
     </p>
 
     <?php // echo $this->render('_search', ['model' => $searchModel]); ?>
@@ -27,10 +31,17 @@ $this->params['breadcrumbs'][] = $this->title;
         'dataProvider' => $dataProvider,
         'filterModel' => $searchModel,
         'columns' => [
-            ['class' => 'yii\grid\SerialColumn'],
-
-            'id',
-            'event_id',
+                [
+                        'attribute' => 'event_id',
+                        'label' => 'Evento',
+                        'value' => 'event.name',
+                    // Transforma a caixa de texto "2" num Dropdown com os nomes reais
+                        'filter' => ArrayHelper::map(
+                                Event::find()->asArray()->all(),
+                                'id',
+                                'name'
+                        ),
+                ],
             'name',
             'capacity',
             [
