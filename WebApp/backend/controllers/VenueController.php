@@ -4,6 +4,7 @@ namespace backend\controllers;
 
 use common\models\Venue;
 use backend\models\VenueSearch;
+use Yii;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
@@ -75,7 +76,8 @@ class VenueController extends Controller
 
         if ($this->request->isPost) {
             if ($model->load($this->request->post()) && $model->save()) {
-                return $this->redirect(['index', 'VenueSearch[event_id]' => $model->event_id]);
+                $returnUrl = Yii::$app->request->get('returnUrl', ['index', 'VenueSearch[event_id]' => $model->event_id]);
+                return $this->redirect($returnUrl);
             }
         } else {
             $model->loadDefaultValues();
@@ -98,7 +100,8 @@ class VenueController extends Controller
         $model = $this->findModel($id);
 
         if ($this->request->isPost && $model->load($this->request->post()) && $model->save()) {
-            return $this->redirect(['view', 'id' => $model->id]);
+            $returnUrl = Yii::$app->request->get('returnUrl', ['view', 'id' => $model->id]);
+            return $this->redirect($returnUrl);
         }
 
         return $this->render('update', [
@@ -115,9 +118,13 @@ class VenueController extends Controller
      */
     public function actionDelete($id)
     {
-        $this->findModel($id)->delete();
+        $model = $this->findModel($id);
+        $eventId = $model->event_id;
 
-        return $this->redirect(['index']);
+        $model->delete();
+
+        $returnUrl = Yii::$app->request->get('returnUrl', ['index', 'VenueSearch[event_id]' => $eventId]);
+        return $this->redirect($returnUrl);
     }
 
     /**

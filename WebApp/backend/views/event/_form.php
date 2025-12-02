@@ -26,6 +26,14 @@ use yii\bootstrap5\Tabs; // Importar o Widget de Abas
                             'label' => 'Cronograma & Prazos',
                             'content' => $this->render('_form_dates', ['form' => $form, 'model' => $model]),
                     ],
+                    [
+                            'label' => 'Locais & Salas',
+                            'content' => $this->render('_form_venues', [
+                                    'model' => $model,
+                                // Só passamos o dataProvider se ele existir (no create ele é null)
+                                    'venuesDataProvider' => $venuesDataProvider ?? null
+                            ]),
+                    ],
                 // No futuro, adicionaremos aqui as abas 'Salas' e 'Bilhetes'
             ],
             'navType' => 'nav-tabs',

@@ -4,6 +4,7 @@ use yii\helpers\Html;
 
 /** @var yii\web\View $this */
 /** @var common\models\Event $model */
+/** @var yii\data\ActiveDataProvider $venuesDataProvider */
 
 $this->title = 'Update Event: ' . $model->name;
 $this->params['breadcrumbs'][] = ['label' => 'Events', 'url' => ['index']];
@@ -16,6 +17,7 @@ $this->params['breadcrumbs'][] = 'Update';
 
     <?= $this->render('_form', [
         'model' => $model,
+        'venuesDataProvider' => $venuesDataProvider,
     ]) ?>
 
 </div>

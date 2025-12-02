@@ -5,7 +5,9 @@ namespace backend\controllers;
 use common\models\Event;
 use backend\models\EventSearch;
 use common\models\OrganizerEvent;
+use common\models\Venue;
 use Yii;
+use yii\data\ActiveDataProvider;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
@@ -115,12 +117,20 @@ class EventController extends Controller
     {
         $model = $this->findModel($id);
 
+        $venuesDataProvider = new ActiveDataProvider([
+            'query' => Venue::find()->where(['event_id' => $id]),
+            'pagination' => [
+                'pageSize' => 10,
+            ]
+        ]);
+
         if ($this->request->isPost && $model->load($this->request->post()) && $model->save()) {
             return $this->redirect(['view', 'id' => $model->id]);
         }
 
         return $this->render('update', [
             'model' => $model,
+            'venuesDataProvider' => $venuesDataProvider,
         ]);
     }
 
