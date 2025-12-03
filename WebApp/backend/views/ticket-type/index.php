@@ -1,6 +1,8 @@
 <?php
 
+use common\models\Event;
 use common\models\TicketType;
+use yii\helpers\ArrayHelper;
 use yii\helpers\Html;
 use yii\helpers\Url;
 use yii\grid\ActionColumn;
@@ -27,10 +29,14 @@ $this->params['breadcrumbs'][] = $this->title;
         'dataProvider' => $dataProvider,
         'filterModel' => $searchModel,
         'columns' => [
-            ['class' => 'yii\grid\SerialColumn'],
-
-            'id',
-            'event_id',
+                [
+                        'attribute' => 'event_id',
+                        'label' => 'Evento',
+                        'value' => function ($model) {
+                            return $model->event ? $model->event->name : 'N/A';
+                        },
+                        'filter' => ArrayHelper::map(Event::find()->all(), 'id', 'name'),
+                ],
             'name',
             'price',
             [

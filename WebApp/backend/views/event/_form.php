@@ -34,7 +34,15 @@ use yii\bootstrap5\Tabs; // Importar o Widget de Abas
                                     'venuesDataProvider' => $venuesDataProvider ?? null
                             ]),
                     ],
-                // No futuro, adicionaremos aqui as abas 'Salas' e 'Bilhetes'
+
+                    [
+                            'label' => 'Bilhetes (Modalidades)',
+                            'content' => $this->render('_form_tickets', [
+                                    'model' => $model,
+                                    'ticketsDataProvider' => $ticketsDataProvider ?? null
+                            ]),
+                    ],
+
             ],
             'navType' => 'nav-tabs',
             'encodeLabels' => false,

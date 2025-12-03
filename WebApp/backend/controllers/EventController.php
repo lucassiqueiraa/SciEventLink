@@ -5,6 +5,7 @@ namespace backend\controllers;
 use common\models\Event;
 use backend\models\EventSearch;
 use common\models\OrganizerEvent;
+use common\models\TicketType;
 use common\models\Venue;
 use Yii;
 use yii\data\ActiveDataProvider;
@@ -124,6 +125,11 @@ class EventController extends Controller
             ]
         ]);
 
+        $ticketsDataProvider = new ActiveDataProvider([
+            'query' => TicketType::find()->where(['event_id' => $model->id]),
+            'pagination' => ['pageSize' => 5],
+        ]);
+
         if ($this->request->isPost && $model->load($this->request->post()) && $model->save()) {
             return $this->redirect(['view', 'id' => $model->id]);
         }
@@ -131,6 +137,7 @@ class EventController extends Controller
         return $this->render('update', [
             'model' => $model,
             'venuesDataProvider' => $venuesDataProvider,
+            'ticketsDataProvider' => $ticketsDataProvider,
         ]);
     }
 
