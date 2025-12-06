@@ -5,6 +5,7 @@ namespace backend\controllers;
 use common\models\Event;
 use backend\models\EventSearch;
 use common\models\OrganizerEvent;
+use common\models\Session;
 use common\models\TicketType;
 use common\models\Venue;
 use Yii;
@@ -130,6 +131,12 @@ class EventController extends Controller
             'pagination' => ['pageSize' => 5],
         ]);
 
+        $sessionsDataProvider = new ActiveDataProvider([
+            'query' => Session::find()->where(['event_id' => $model->id]),
+            'sort' => ['defaultOrder' => ['start_time' => SORT_ASC]], // Ordenar por hora!
+            'pagination' => ['pageSize' => 10],
+        ]);
+
         if ($this->request->isPost && $model->load($this->request->post()) && $model->save()) {
             return $this->redirect(['view', 'id' => $model->id]);
         }
@@ -138,6 +145,7 @@ class EventController extends Controller
             'model' => $model,
             'venuesDataProvider' => $venuesDataProvider,
             'ticketsDataProvider' => $ticketsDataProvider,
+            'sessionsDataProvider' => $sessionsDataProvider,
         ]);
     }
 

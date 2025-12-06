@@ -43,6 +43,14 @@ use yii\bootstrap5\Tabs; // Importar o Widget de Abas
                             ]),
                     ],
 
+                    [
+                            'label' => 'Agenda (Sessões)',
+                            'content' => $this->render('_form_sessions', [
+                                    'model' => $model,
+                                    'sessionsDataProvider' => $sessionsDataProvider ?? null
+                            ]),
+                    ],
+
             ],
             'navType' => 'nav-tabs',
             'encodeLabels' => false,

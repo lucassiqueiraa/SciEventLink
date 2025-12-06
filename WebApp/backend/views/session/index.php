@@ -1,6 +1,8 @@
 <?php
 
+use common\models\Event;
 use common\models\Session;
+use yii\helpers\ArrayHelper;
 use yii\helpers\Html;
 use yii\helpers\Url;
 use yii\grid\ActionColumn;
@@ -27,14 +29,23 @@ $this->params['breadcrumbs'][] = $this->title;
         'dataProvider' => $dataProvider,
         'filterModel' => $searchModel,
         'columns' => [
-            ['class' => 'yii\grid\SerialColumn'],
 
-            'id',
-            'event_id',
-            'venue_id',
+                [
+                        'attribute' => 'event_id',
+                        'label' => 'Evento',
+                        'value' => 'event.name',
+                        'filter' => ArrayHelper::map(Event::find()->all(), 'id', 'name'),
+                ],
+                [
+                        'attribute' => 'venue_id',
+                        'label' => 'Sala',
+                        'value' => function($model) {
+                            return $model->venue ? $model->venue->name : 'N/A';
+                        }
+                ],
             'title',
             'start_time',
-            //'end_time',
+            'end_time',
             [
                 'class' => ActionColumn::className(),
                 'urlCreator' => function ($action, Session $model, $key, $index, $column) {

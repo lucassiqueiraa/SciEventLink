@@ -29,6 +29,11 @@ $this->params['breadcrumbs'][] = $this->title;
                 ['venue/index', 'VenueSearch[event_id]' => $model->id],
                 ['class' => 'btn btn-info'])
         ?>
+
+        <?= Html::a('<i class="fas fa-calendar-alt"></i> Gerir Agenda',
+                ['session/index', 'SessionSearch[event_id]' => $model->id],
+                ['class' => 'btn btn-warning'])
+        ?>
     </p>
 
     <?= DetailView::widget([

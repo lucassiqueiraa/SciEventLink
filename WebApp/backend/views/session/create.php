@@ -4,6 +4,7 @@ use yii\helpers\Html;
 
 /** @var yii\web\View $this */
 /** @var common\models\Session $model */
+/** @var $venueList */
 
 $this->title = 'Create Session';
 $this->params['breadcrumbs'][] = ['label' => 'Sessions', 'url' => ['index']];
@@ -14,7 +15,8 @@ $this->params['breadcrumbs'][] = $this->title;
     <h1><?= Html::encode($this->title) ?></h1>
 
     <?= $this->render('_form', [
-        'model' => $model,
+            'model' => $model,
+            'venueList' => $venueList,
     ]) ?>
 
 </div>

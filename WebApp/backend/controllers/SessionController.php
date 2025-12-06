@@ -4,9 +4,13 @@ namespace backend\controllers;
 
 use common\models\Session;
 use backend\models\SessionSearch;
+use common\models\Venue;
+use Yii;
+use yii\helpers\ArrayHelper;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
+use yii\web\Response;
 
 /**
  * SessionController implements the CRUD actions for Session model.
@@ -63,15 +67,28 @@ class SessionController extends Controller
     /**
      * Creates a new Session model.
      * If creation is successful, the browser will be redirected to the 'view' page.
-     * @return string|\yii\web\Response
+     * @return string|Response
      */
-    public function actionCreate()
+    public function actionCreate($event_id = null)
     {
         $model = new Session();
 
+        if ($event_id) {
+            $model->event_id = $event_id;
+        }
+
+        $venueList = [];
+        if ($model->event_id) {
+            $venues = Venue::find()
+                ->where(['event_id' => $model->event_id])
+                ->all();
+            $venueList = ArrayHelper::map($venues, 'id', 'name');
+        }
+
         if ($this->request->isPost) {
             if ($model->load($this->request->post()) && $model->save()) {
-                return $this->redirect(['view', 'id' => $model->id]);
+                $returnUrl = Yii::$app->request->get('returnUrl', ['index']);
+                return $this->redirect($returnUrl);
             }
         } else {
             $model->loadDefaultValues();
@@ -79,6 +96,7 @@ class SessionController extends Controller
 
         return $this->render('create', [
             'model' => $model,
+            'venueList' => $venueList,
         ]);
     }
 
@@ -86,7 +104,7 @@ class SessionController extends Controller
      * Updates an existing Session model.
      * If update is successful, the browser will be redirected to the 'view' page.
      * @param int $id ID
-     * @return string|\yii\web\Response
+     * @return string|Response
      * @throws NotFoundHttpException if the model cannot be found
      */
     public function actionUpdate($id)
@@ -106,7 +124,7 @@ class SessionController extends Controller
      * Deletes an existing Session model.
      * If deletion is successful, the browser will be redirected to the 'index' page.
      * @param int $id ID
-     * @return \yii\web\Response
+     * @return Response
      * @throws NotFoundHttpException if the model cannot be found
      */
     public function actionDelete($id)
