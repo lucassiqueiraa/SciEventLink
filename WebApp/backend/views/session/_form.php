@@ -27,10 +27,18 @@ use yii\widgets\ActiveForm;
 
     <?= $form->field($model, 'title')->textInput(['maxlength' => true]) ?>
 
-    <?= $form->field($model, 'start_time')->textInput() ?>
+    <?php
+        if ($model->start_time) {
+            $model->start_time = date('Y-m-d\TH:i', strtotime($model->start_time));
+        }
+        if ($model->end_time) {
+            $model->end_time = date('Y-m-d\TH:i', strtotime($model->end_time));
+        }
+    ?>
 
-    <?= $form->field($model, 'end_time')->textInput() ?>
+    <?= $form->field($model, 'start_time')->input('datetime-local') ?>
 
+    <?= $form->field($model, 'end_time')->input('datetime-local') ?>
     <div class="form-group">
         <?= Html::submitButton('Save', ['class' => 'btn btn-success']) ?>
     </div>

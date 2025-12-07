@@ -111,12 +111,22 @@ class SessionController extends Controller
     {
         $model = $this->findModel($id);
 
+        $venueList = [];
+        if ($model->event_id) {
+            $venues = Venue::find()
+                ->where(['event_id' => $model->event_id])
+                ->all();
+            $venueList = ArrayHelper::map($venues, 'id', 'name');
+        }
+
         if ($this->request->isPost && $model->load($this->request->post()) && $model->save()) {
+            $returnUrl = Yii::$app->request->get('returnUrl', ['view', 'id' => $model->id]);
             return $this->redirect(['view', 'id' => $model->id]);
         }
 
         return $this->render('update', [
             'model' => $model,
+            'venueList' => $venueList,
         ]);
     }
 

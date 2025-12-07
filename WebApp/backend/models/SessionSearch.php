@@ -47,6 +47,12 @@ class SessionSearch extends Session
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
+            'sort' => [
+                'defaultOrder' => [
+                    'start_time' => SORT_ASC,
+                    'title' => SORT_ASC,
+                ]
+            ],
         ]);
 
         $this->load($params, $formName);
