@@ -2,6 +2,7 @@
 
 namespace backend\models;
 
+use Yii;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
 use common\models\Event;
@@ -42,6 +43,11 @@ class EventSearch extends Event
     public function search($params, $formName = null)
     {
         $query = Event::find();
+
+        $currentUser = Yii::$app->user->identity;
+        if ($currentUser && $currentUser->username !== 'admin') {
+            $query->andWhere(['created_by' => Yii::$app->user->id]);
+        }
 
         // add conditions that should always apply here
 

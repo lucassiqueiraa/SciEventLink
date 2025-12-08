@@ -3,6 +3,7 @@
 namespace common\models;
 
 use Yii;
+use yii\behaviors\BlameableBehavior;
 
 /**
  * This is the model class for table "event".
@@ -78,6 +79,20 @@ class Event extends \yii\db\ActiveRecord
     }
 
     /**
+     * Comportamentos automáticos do Modelo
+     */
+    public function behaviors()
+    {
+        return [
+            [
+                'class' => BlameableBehavior::class,
+                'createdByAttribute' => 'created_by',
+                'updatedByAttribute' => 'updated_by',
+            ],
+        ];
+    }
+
+    /**
      * Gets query for [[OrganizerEvents]].
      *
      * @return \yii\db\ActiveQuery
@@ -118,23 +133,21 @@ class Event extends \yii\db\ActiveRecord
     }
 
     /**
-     * Gets query for [[Users]].
-     *
-     * @return \yii\db\ActiveQuery
+     * Lista de Organizadores Extra (Equipe)
      */
-    public function getUsers()
+    public function getOrganizers()
     {
-        return $this->hasMany(User::class, ['id' => 'user_id'])->viaTable('organizer_event', ['event_id' => 'id']);
+        return $this->hasMany(User::class, ['id' => 'user_id'])
+            ->viaTable('organizer_event', ['event_id' => 'id']);
     }
 
     /**
-     * Gets query for [[Users0]].
-     *
-     * @return \yii\db\ActiveQuery
+     * Lista de Participantes Inscritos
      */
-    public function getUsers0()
+    public function getParticipants()
     {
-        return $this->hasMany(User::class, ['id' => 'user_id'])->viaTable('registration', ['event_id' => 'id']);
+        return $this->hasMany(User::class, ['id' => 'user_id'])
+            ->viaTable('registration', ['event_id' => 'id']);
     }
 
     /**
@@ -145,6 +158,11 @@ class Event extends \yii\db\ActiveRecord
     public function getVenues()
     {
         return $this->hasMany(Venue::class, ['event_id' => 'id']);
+    }
+
+    public function getOwner()
+    {
+        return $this->hasOne(User::class, ['id' => 'created_by']);
     }
 
 
