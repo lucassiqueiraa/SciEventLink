@@ -1,12 +1,14 @@
 <?php
 
 use yii\helpers\Html;
+use yii\web\JqueryAsset;
 use yii\widgets\ActiveForm;
 
 /** @var yii\web\View $this */
 /** @var common\models\Session $model */
 /** @var yii\widgets\ActiveForm $form */
 /** @var array $venueList */
+/** @var array $eventList */
 ?>
 
 <div class="session-form">
@@ -14,16 +16,31 @@ use yii\widgets\ActiveForm;
     <?php $form = ActiveForm::begin(); ?>
 
     <?php
-        if ($model->event_id) {
-            echo $form->field($model, 'event_id')->hiddenInput()->label(false);
-        } else {
-            echo $form->field($model, 'event_id')->textInput();
-        } ?>
+    // Se o evento já veio fixo (via URL), mostra escondido
+    if ($model->event_id && empty($eventList)) {
+        echo $form->field($model, 'event_id')->hiddenInput()->label(false);
+        echo '<div class="alert alert-info py-2 mb-3">Evento: <b>' . $model->event->name . '</b></div>';
+    }
+    // Se não veio fixo, mostra o Dropdown para escolher
+    else {
+        echo $form->field($model, 'event_id')->dropDownList(
+                $eventList,
+                [
+                        'prompt' => 'Selecione o Evento...',
+                        'id' => 'select-evento-id', // Damos um ID para o JavaScript encontrar
+                ]
+        );
+    }
 
-    <?= $form->field($model, 'venue_id')->dropDownList(
+    // Dropdown de Salas (Venue)
+    echo $form->field($model, 'venue_id')->dropDownList(
             $venueList,
-            ['prompt' => 'Selecione uma Sala...']
-    ); ?>
+            [
+                    'prompt' => 'Selecione o Evento primeiro...',
+                    'id' => 'select-venue-id', // ID para o JavaScript preencher
+            ]
+    );
+    ?>
 
     <?= $form->field($model, 'title')->textInput(['maxlength' => true]) ?>
 
@@ -44,5 +61,13 @@ use yii\widgets\ActiveForm;
     </div>
 
     <?php ActiveForm::end(); ?>
+
+    <?php
+    // 'depends' garante que o jQuery carrega ANTES do nosso script
+    $this->registerJsFile(
+            '@web/js/session-form.js',
+            ['depends' => [JqueryAsset::class]]
+    );
+    ?>
 
 </div>

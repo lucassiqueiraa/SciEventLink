@@ -2,6 +2,7 @@
 
 namespace backend\controllers;
 
+use common\models\Event;
 use common\models\Session;
 use backend\models\SessionSearch;
 use common\models\Venue;
@@ -78,11 +79,16 @@ class SessionController extends Controller
         }
 
         $venueList = [];
+        $eventList = [];
+
         if ($model->event_id) {
             $venues = Venue::find()
                 ->where(['event_id' => $model->event_id])
                 ->all();
             $venueList = ArrayHelper::map($venues, 'id', 'name');
+        }
+        else{
+            $eventList = ArrayHelper::map(Event::find()->all(), 'id', 'name');
         }
 
         if ($this->request->isPost) {
@@ -97,6 +103,7 @@ class SessionController extends Controller
         return $this->render('create', [
             'model' => $model,
             'venueList' => $venueList,
+            'eventList' => $eventList,
         ]);
     }
 
@@ -142,6 +149,27 @@ class SessionController extends Controller
         $this->findModel($id)->delete();
 
         return $this->redirect(['index']);
+    }
+
+    /**
+     * Returns the HTML options for rooms for a given event (via AJAX)
+     */
+    public function actionListVenues($id)
+    {
+
+        $venues = Venue::find()
+            ->where(['event_id' => $id])
+            ->orderBy('name')
+            ->all();
+
+        if ($venues) {
+            echo "<option value=''>Selecione uma Sala...</option>";
+            foreach ($venues as $venue) {
+                echo "<option value='" . $venue->id . "'>" . $venue->name . "</option>";
+            }
+        } else {
+            echo "<option value=''>- Sem salas cadastradas -</option>";
+        }
     }
 
     /**
