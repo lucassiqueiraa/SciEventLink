@@ -41,7 +41,7 @@ class Session extends \yii\db\ActiveRecord
     {
         return [
             [['venue_id', 'start_time', 'end_time'], 'default', 'value' => null],
-            [['event_id', 'title'], 'required'],
+            [['event_id', 'title', 'venue_id', 'start_time', 'end_time'], 'required'],
             [['event_id', 'venue_id'], 'integer'],
             [['start_time', 'end_time'], 'safe'],
             [['title'], 'string', 'max' => 255],
@@ -57,11 +57,13 @@ class Session extends \yii\db\ActiveRecord
     {
         return [
             'id' => 'ID',
-            'event_id' => 'Event ID',
-            'venue_id' => 'Venue ID',
-            'title' => 'Title',
+            'event_id' => 'Event',
+            'venue_id' => 'Venue',
+            'title' => 'Session Title',
             'start_time' => 'Start Time',
             'end_time' => 'End Time',
+            ['end_time', 'compare', 'compareAttribute' => 'start_time', 'operator' => '>', 'message' => 'O fim deve ser depois do início.'],
+            ['venue_id', 'validateVenueAvailability'],
         ];
     }
 
@@ -135,4 +137,52 @@ class Session extends \yii\db\ActiveRecord
         return $this->hasOne(Venue::class, ['id' => 'venue_id']);
     }
 
+    /**
+     * Verifica se a sala já está ocupada nesse horário
+     */
+    public function validateVenueAvailability($attribute, $params)
+    {
+        if ($this->hasErrors()) {
+            return;
+        }
+        // Procura sessões na MESMA sala que colidam com o horário
+        // Lógica: (StartA < EndB) e (EndA > StartB)
+        $conflito = Session::find()
+            ->where(['venue_id' => $this->venue_id])
+            ->andWhere(['<>', 'id', $this->id]) // Ignora a própria sessão (se for edição)
+            ->andWhere(['<', 'start_time', $this->end_time])
+            ->andWhere(['>', 'end_time', $this->start_time])
+            ->exists();
+
+        if ($conflito) {
+            $this->addError($attribute, 'Esta sala já está ocupada neste horário!');
+        }
+    }
+
+    /**
+     * Limpa e formata as datas para o MySQL antes de salvar
+     */
+    public function beforeSave($insert)
+    {
+        if (!parent::beforeSave($insert)) {
+            return false;
+        }
+
+        // START_TIME
+        if (!empty($this->start_time)) {
+            // 1. Converte o texto (com 'T') para Timestamp (números)
+            $timestamp = strtotime($this->start_time);
+
+            // 2. Converte o Timestamp para o formato MySQL 'AAAA-MM-DD HH:MM:SS'
+            $this->start_time = date('Y-m-d H:i:s', $timestamp);
+        }
+
+        // END_TIME (Mesma coisa)
+        if (!empty($this->end_time)) {
+            $timestamp = strtotime($this->end_time);
+            $this->end_time = date('Y-m-d H:i:s', $timestamp);
+        }
+
+        return true;
+    }
 }

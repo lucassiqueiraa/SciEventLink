@@ -3,6 +3,7 @@
 namespace common\models;
 
 use Yii;
+use yii\behaviors\BlameableBehavior;
 
 /**
  * This is the model class for table "event".
@@ -51,11 +52,12 @@ class Event extends \yii\db\ActiveRecord
         return [
             [['description', 'submission_deadline', 'evaluation_deadline'], 'default', 'value' => null],
             [['status'], 'default', 'value' => 'open'],
-            [['name', 'start_date', 'end_date'], 'required'],
+            [['name', 'start_date', 'end_date', 'submission_deadline', 'evaluation_deadline'], 'required'],
             [['description', 'status'], 'string'],
             [['start_date', 'end_date', 'submission_deadline', 'evaluation_deadline'], 'safe'],
             [['name'], 'string', 'max' => 255],
             ['status', 'in', 'range' => array_keys(self::optsStatus())],
+            [['end_date', 'submission_deadline', 'evaluation_deadline'], 'validateDates'],
         ];
     }
 
@@ -73,6 +75,20 @@ class Event extends \yii\db\ActiveRecord
             'submission_deadline' => 'Submission Deadline',
             'evaluation_deadline' => 'Evaluation Deadline',
             'status' => 'Status',
+        ];
+    }
+
+    /**
+     * Comportamentos automáticos do Modelo
+     */
+    public function behaviors()
+    {
+        return [
+            [
+                'class' => BlameableBehavior::class,
+                'createdByAttribute' => 'created_by',
+                'updatedByAttribute' => 'updated_by',
+            ],
         ];
     }
 
@@ -117,23 +133,21 @@ class Event extends \yii\db\ActiveRecord
     }
 
     /**
-     * Gets query for [[Users]].
-     *
-     * @return \yii\db\ActiveQuery
+     * Lista de Organizadores Extra (Equipe)
      */
-    public function getUsers()
+    public function getOrganizers()
     {
-        return $this->hasMany(User::class, ['id' => 'user_id'])->viaTable('organizer_event', ['event_id' => 'id']);
+        return $this->hasMany(User::class, ['id' => 'user_id'])
+            ->viaTable('organizer_event', ['event_id' => 'id']);
     }
 
     /**
-     * Gets query for [[Users0]].
-     *
-     * @return \yii\db\ActiveQuery
+     * Lista de Participantes Inscritos
      */
-    public function getUsers0()
+    public function getParticipants()
     {
-        return $this->hasMany(User::class, ['id' => 'user_id'])->viaTable('registration', ['event_id' => 'id']);
+        return $this->hasMany(User::class, ['id' => 'user_id'])
+            ->viaTable('registration', ['event_id' => 'id']);
     }
 
     /**
@@ -144,6 +158,11 @@ class Event extends \yii\db\ActiveRecord
     public function getVenues()
     {
         return $this->hasMany(Venue::class, ['event_id' => 'id']);
+    }
+
+    public function getOwner()
+    {
+        return $this->hasOne(User::class, ['id' => 'created_by']);
     }
 
 
@@ -220,4 +239,52 @@ class Event extends \yii\db\ActiveRecord
     {
         $this->status = self::STATUS_FINISHED;
     }
+
+    /**
+     * Valida toda a cronologia do evento
+     */
+    public function validateDates($attribute, $params)
+    {
+        if ($this->hasErrors()) {
+            return;
+        }
+
+        $start = strtotime($this->start_date);
+        $end = strtotime($this->end_date);
+
+        // Só converte se existirem (para evitar erros em campos vazios)
+        $subDeadline = $this->submission_deadline ? strtotime($this->submission_deadline) : null;
+        $evalDeadline = $this->evaluation_deadline ? strtotime($this->evaluation_deadline) : null;
+
+        // Verificamos qual campo estamos a validar agora ($attribute)
+        // e aplicamos a regra específica para ele.
+
+        switch ($attribute) {
+
+            case 'end_date':
+                if ($end < $start) {
+                    $this->addError($attribute, 'End date must be after start date');
+                }
+                break;
+
+            case 'submission_deadline':
+                if ($subDeadline > $start) {
+                    $this->addError($attribute, 'A submissão deve fechar antes do evento começar.');
+                }
+                break;
+
+            case 'evaluation_deadline':
+                if ($subDeadline && $evalDeadline < $subDeadline) {
+                    $this->addError($attribute, 'The Evaluation Deadline must be after the Submission Deadline.');
+                }
+                if ($evalDeadline > $start) {
+                    $this->addError($attribute, 'The Evaluation must be completed before the start of the Event.');
+                }
+                break;
+        }
+    }
+
+
+
+
 }
