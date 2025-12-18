@@ -64,41 +64,162 @@ class UserController extends Controller
     }
 
     /**
-     * CRIAÇÃO DE ORGANIZADOR (Substitui o create padrão)
-     * Usa o OrganizerSignupForm para criar User + Profile + Role ORG
+     * Creates a new User + UserProfile + RBAC Role.
      */
     public function actionCreate()
     {
-        $model = new OrganizerSignupForm();
+        $user = new User();
+        $profile = new UserProfile();
 
-        //Se o formulário foi enviado e o signup funcionou
-        if ($model->load($this->request->post()) && $model->signup()) {
-            Yii::$app->session->setFlash('success', 'Organizador criado com sucesso!');
-            return $this->redirect(['index']);
+        // Se o formulário enviou dados para AMBOS os modelos
+        if ($this->request->isPost) {
+            if ($user->load($this->request->post()) && $profile->load($this->request->post())) {
+
+                $transaction = Yii::$app->db->beginTransaction();
+                try {
+                    $user->setPassword($user->password_hash);
+                    $user->generateAuthKey();
+                    $user->generateEmailVerificationToken();
+                    $user->status = 10; // Ativo
+
+                    if (!$user->save()) {
+                        throw new \Exception("Erro user: " . print_r($user->errors, true));
+                    }
+
+                    $profile->user_id = $user->id;
+
+                    // Traduz o papel escolhido no dropdown para o código do banco
+                    switch ($user->role) {
+                        case 'admin':
+                            $profile->role = 'ADM';
+                            break;
+                        case 'organizer':
+                            $profile->role = 'ORG';
+                            break;
+                        default:
+                            $profile->role = 'PART'; // Participante por padrão
+                    }
+
+                    if (!$profile->save()) {
+                        throw new \Exception("Erro profile: " . print_r($profile->errors, true));
+                    }
+
+                    if (!empty($user->role)) {
+                        $auth = Yii::$app->authManager;
+                        $role = $auth->getRole($user->role);
+                        $auth->assign($role, $user->id);
+                    }
+
+                    $transaction->commit();
+                    return $this->redirect(['view', 'id' => $user->id]);
+
+                } catch (\Exception $e) {
+                    $transaction->rollBack();
+                    Yii::$app->session->setFlash('error', $e->getMessage());
+                }
+            }
+        } else {
+            $user->loadDefaultValues();
         }
 
         return $this->render('create', [
-            'model' => $model,
+            'user' => $user,
+            'profile' => $profile,
         ]);
     }
 
     /**
-     * Updates an existing UserProfile model.
-     * If update is successful, the browser will be redirected to the 'view' page.
-     * @param int $id ID
-     * @return string|\yii\web\Response
-     * @throws NotFoundHttpException if the model cannot be found
+     * Updates an existing User + Profile + RBAC.
      */
     public function actionUpdate($id)
     {
-        $model = $this->findModel($id);
+        $user = $this->findModel($id);
 
-        if ($this->request->isPost && $model->load($this->request->post()) && $model->save()) {
-            return $this->redirect(['view', 'id' => $model->id]);
+        // 1. Busca o perfil de forma direta e segura
+        $profile = UserProfile::findOne(['user_id' => $id]);
+
+        // Se não existir, cria um novo e FORÇA O ID IMEDIATAMENTE
+        if (!$profile) {
+            $profile = new UserProfile();
+            $profile->user_id = $user->id;
+        }
+
+        // 2. Prepara o formulário (Role e Senha)
+        $auth = Yii::$app->authManager;
+        $roles = $auth->getRolesByUser($id);
+        if ($roles) {
+            $user->role = array_key_first($roles);
+        }
+
+        $oldPasswordHash = $user->password_hash;
+        $user->password_hash = '';
+
+        // 3. Processamento do Save
+        if ($this->request->isPost) {
+
+            // Carrega os dados
+            $user->load($this->request->post());
+            $profile->load($this->request->post());
+
+            $transaction = Yii::$app->db->beginTransaction();
+            try {
+                // Senha
+                if (!empty($user->password_hash)) {
+                    $user->setPassword($user->password_hash);
+                } else {
+                    $user->password_hash = $oldPasswordHash;
+                }
+
+                // --- DEBUG DE VALIDAÇÃO DO USER ---
+                if (!$user->validate()) {
+                    throw new \Exception("Erro validação User: " . print_r($user->errors, true));
+                }
+                if (!$user->save(false)) { // false porque já validamos acima
+                    throw new \Exception("Erro ao salvar User no banco.");
+                }
+
+                // Sincroniza Role
+                switch ($user->role) {
+                    case 'admin': $profile->role = 'ADM'; break;
+                    case 'organizer': $profile->role = 'ORG'; break;
+                    case 'participant': $profile->role = 'PART'; break;
+                }
+
+                // --- GARANTIA DE LIGAÇÃO ---
+                $profile->user_id = $user->id; // Redundância de segurança
+
+                // --- DEBUG DE VALIDAÇÃO DO PROFILE ---
+                if (!$profile->validate()) {
+                    throw new \Exception("Erro validação Profile: " . print_r($profile->errors, true));
+                }
+                if (!$profile->save(false)) {
+                    throw new \Exception("Erro ao salvar Profile no banco.");
+                }
+
+                // Atualiza RBAC
+                $auth->revokeAll($id);
+                if (!empty($user->role)) {
+                    $newRole = $auth->getRole($user->role);
+                    $auth->assign($newRole, $id);
+                }
+
+                $transaction->commit();
+                Yii::$app->session->setFlash('success', 'Atualizado com sucesso!');
+                return $this->redirect(['view', 'id' => $user->id]);
+
+            } catch (\Exception $e) {
+                $transaction->rollBack();
+                // Mostra o erro na tela para pararmos de adivinhar
+                Yii::$app->session->setFlash('error', $e->getMessage());
+
+                // Restaura senha para não bugar o form
+                $user->password_hash = '';
+            }
         }
 
         return $this->render('update', [
-            'model' => $model,
+            'user' => $user,
+            'profile' => $profile,
         ]);
     }
 
@@ -133,12 +254,12 @@ class UserController extends Controller
      * Finds the UserProfile model based on its primary key value.
      * If the model is not found, a 404 HTTP exception will be thrown.
      * @param int $id ID
-     * @return UserProfile the loaded model
+     * @return User the loaded model
      * @throws NotFoundHttpException if the model cannot be found
      */
     protected function findModel($id)
     {
-        if (($model = UserProfile::findOne(['id' => $id])) !== null) {
+        if (($model = User::findOne(['id' => $id])) !== null) {
             return $model;
         }
 

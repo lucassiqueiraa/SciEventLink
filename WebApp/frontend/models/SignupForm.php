@@ -64,47 +64,61 @@ class SignupForm extends Model
             return null;
         }
 
-        // Start the transaction SQL
         $transaction = Yii::$app->db->beginTransaction();
 
         try {
-            //Saving at User table
+            // 1. Criar User
             $user = new User();
             $user->username = $this->username;
             $user->email = $this->email;
             $user->setPassword($this->password);
             $user->generateAuthKey();
-            $user->status = 10; // Ativo
+
+            // User::STATUS_ACTIVE (10) -> Loga direto
+            $user->status = User::STATUS_ACTIVE;
 
             if (!$user->save()) {
-                throw new \Exception("Falha ao criar utilizador.");
+                throw new \Exception("Erro ao salvar User: " . implode(", ", $user->getErrorSummary(true)));
             }
 
-            //Saving at UserProfile table
+            // 2. Criar Profilem
             $profile = new UserProfile();
             $profile->user_id = $user->id;
             $profile->name = $this->name;
             $profile->nif = $this->nif;
             $profile->phone = $this->phone;
+
+            // para relatórios rápidos, mantenha.
             $profile->role = 'PART';
 
             if (!$profile->save()) {
-                throw new \Exception("failed to create profile: " . print_r($profile->errors, true));
+                throw new \Exception("Erro ao salvar Profile: " . implode(", ", $profile->getErrorSummary(true)));
+            }
+
+            $auth = \Yii::$app->authManager;
+            $authorRole = $auth->getRole('participant');
+
+            if ($authorRole) {
+                $auth->assign($authorRole, $user->id);
+            } else {
+                throw new \Exception("Erro crítico: Papel 'participant' não encontrado no sistema.");
             }
 
             $transaction->commit();
 
-            // Envio de Email (Opcional agora, pode comentar se não tiver SMTP)
             // $this->sendEmail($user);
 
             return $user;
 
         } catch (\Exception $e) {
             $transaction->rollBack();
+
+            // para ver no runtime/logs/app.log
+            Yii::error("Signup Falhou: " . $e->getMessage(), 'signup');
+
             return null;
         }
     }
-
     /**
      * Sends confirmation email to user
      * @param User $user user model to with email should be send

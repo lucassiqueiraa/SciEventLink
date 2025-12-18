@@ -30,7 +30,7 @@ class User extends ActiveRecord implements IdentityInterface
     const STATUS_INACTIVE = 9;
     const STATUS_ACTIVE = 10;
 
-
+    public $role;
     /**
      * {@inheritdoc}
      */
@@ -55,8 +55,18 @@ class User extends ActiveRecord implements IdentityInterface
     public function rules()
     {
         return [
+            [['username', 'email'], 'trim'],
+            [['username', 'email'], 'required'],
+            [['username', 'email'], 'string', 'max' => 255],
+            ['email', 'email'],
+
+            ['username', 'unique', 'message' => 'Este nome de utilizador já existe.'],
+            ['email', 'unique', 'message' => 'Este email já está registado.'],
+
             ['status', 'default', 'value' => self::STATUS_INACTIVE],
             ['status', 'in', 'range' => [self::STATUS_ACTIVE, self::STATUS_INACTIVE, self::STATUS_DELETED]],
+            ['role', 'string'],
+            ['role', 'in', 'range' => ['participant', 'organizer', 'admin']],
         ];
     }
 
