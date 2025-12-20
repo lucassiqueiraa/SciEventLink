@@ -9,6 +9,7 @@ use common\models\Venue;
 use Yii;
 use yii\helpers\ArrayHelper;
 use yii\web\Controller;
+use yii\web\ForbiddenHttpException;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
 use yii\web\Response;
@@ -45,6 +46,12 @@ class SessionController extends Controller
     {
         $searchModel = new SessionSearch();
         $dataProvider = $searchModel->search($this->request->queryParams);
+
+        if (!Yii::$app->user->can('admin')) {
+            $dataProvider->query
+                ->joinWith('event')
+                ->andWhere(['event.created_by' => Yii::$app->user->id]);
+        }
 
         return $this->render('index', [
             'searchModel' => $searchModel,
@@ -182,6 +189,9 @@ class SessionController extends Controller
     protected function findModel($id)
     {
         if (($model = Session::findOne(['id' => $id])) !== null) {
+            if (!Yii::$app->user->can('admin') && $model->created_by !== Yii::$app->user->id) {
+                throw new ForbiddenHttpException('Você não tem permissão para aceder a este evento.');
+            }
             return $model;
         }
 

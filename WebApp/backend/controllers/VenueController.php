@@ -6,8 +6,10 @@ use common\models\Venue;
 use backend\models\VenueSearch;
 use Yii;
 use yii\web\Controller;
+use yii\web\ForbiddenHttpException;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
+use yii\web\Response;
 
 /**
  * VenueController implements the CRUD actions for Venue model.
@@ -42,6 +44,12 @@ class VenueController extends Controller
         $searchModel = new VenueSearch();
         $dataProvider = $searchModel->search($this->request->queryParams);
 
+        if(!Yii::$app->user->can('admin')){
+            $dataProvider->query
+                ->joinWith('event')
+                ->andWhere(['event.created_by' => Yii::$app->user->id]);
+        }
+
         return $this->render('index', [
             'searchModel' => $searchModel,
             'dataProvider' => $dataProvider,
@@ -64,7 +72,7 @@ class VenueController extends Controller
     /**
      * Creates a new Venue model.
      * If creation is successful, the browser will be redirected to the 'view' page.
-     * @return string|\yii\web\Response
+     * @return string|Response
      */
     public function actionCreate($event_id = null)
     {
@@ -92,7 +100,7 @@ class VenueController extends Controller
      * Updates an existing Venue model.
      * If update is successful, the browser will be redirected to the 'view' page.
      * @param int $id ID
-     * @return string|\yii\web\Response
+     * @return string|Response
      * @throws NotFoundHttpException if the model cannot be found
      */
     public function actionUpdate($id)
@@ -113,7 +121,7 @@ class VenueController extends Controller
      * Deletes an existing Venue model.
      * If deletion is successful, the browser will be redirected to the 'index' page.
      * @param int $id ID
-     * @return \yii\web\Response
+     * @return Response
      * @throws NotFoundHttpException if the model cannot be found
      */
     public function actionDelete($id)
@@ -137,6 +145,9 @@ class VenueController extends Controller
     protected function findModel($id)
     {
         if (($model = Venue::findOne(['id' => $id])) !== null) {
+            if (!Yii::$app->user->can('admin') && $model->created_by !== Yii::$app->user->id) {
+                throw new ForbiddenHttpException('Você não tem permissão para aceder a este evento.');
+            }
             return $model;
         }
 

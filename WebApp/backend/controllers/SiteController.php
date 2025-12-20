@@ -34,9 +34,14 @@ class SiteController extends Controller
                         'allow' => true,
                     ],
                     [
-                        'actions' => ['logout', 'index'],
+                        'actions' => ['logout'],
                         'allow' => true,
                         'roles' => ['@'],
+                    ],
+                    [
+                        'actions' => ['logout', 'index'],
+                        'allow' => true,
+                        'roles' => ['loginToBackend'],
                     ],
                 ],
             ],
@@ -64,53 +69,15 @@ class SiteController extends Controller
     /**
      * Displays homepage.
      *
-     * @return string
+     * @return Response
      */
     public function actionIndex()
     {
-        // TODO: Na próxima sprint implementar RBAC: Yii::$app->user->can('admin')
-        $currentUser = Yii::$app->user->identity;
-        $isAdmin = ($currentUser && $currentUser->username === 'admin');
-        $userId = Yii::$app->user->id;
-
-        if ($isAdmin) {
-            $totalParticipants = User::find()->count();
-            $totalOrganizers = User::find()->where(['!=', 'username', 'admin'])->count(); // Exemplo
-            $totalEvents = Event::find()->count();
-            $suspendedUsers = User::find()->where(['status' => 0])->count();
-
-            return $this->render('index', [
-                'isAdmin' => true,
-                'totalParticipants' => $totalParticipants,
-                'totalOrganizers' => $totalOrganizers,
-                'totalEvents' => $totalEvents,
-                'suspendedUsers' => $suspendedUsers,
-                // Variáveis do organizador vão nulas para não dar erro na view
-                'myEvents' => 0, 'mySessions' => 0, 'myVenues' => 0
-            ]);
+        if (Yii::$app->user->can('admin')) {
+            return $this->redirect(['/admin-dashboard/index']);
         }
-
         else {
-            $myEvents = Event::find()->where(['created_by' => $userId])->count();
-
-            $mySessions = Session::find()
-                ->joinWith('event')
-                ->where(['event.created_by' => $userId])
-                ->count();
-
-            $myVenues = Venue::find()
-                ->joinWith('event')
-                ->where(['event.created_by' => $userId])
-                ->count();
-
-            return $this->render('index', [
-                'isAdmin' => false,
-                'myEvents' => $myEvents,
-                'mySessions' => $mySessions,
-                'myVenues' => $myVenues,
-                // Variáveis do admin vão nulas
-                'totalParticipants' => 0, 'totalOrganizers' => 0, 'totalEvents' => 0, 'suspendedUsers' => 0
-            ]);
+            return $this->redirect(['/organizer-dashboard/index']);
         }
     }
 

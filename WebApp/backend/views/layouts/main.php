@@ -40,7 +40,15 @@ AppAsset::register($this);
     ];
     if (Yii::$app->user->isGuest) {
         $menuItems[] = ['label' => 'Login', 'url' => ['/site/login']];
-    }     
+    } else {
+        // --- ITEM RESTRITO AO ADMIN ---
+        $menuItems[] = [
+                'label' => 'Gerir Utilizadores',
+                'url' => ['/user/index'],
+            // Só aparece se for 'admin'
+                'visible' => Yii::$app->user->can('admin')
+        ];
+    }
     echo Nav::widget([
         'options' => ['class' => 'navbar-nav me-auto mb-2 mb-md-0'],
         'items' => $menuItems,

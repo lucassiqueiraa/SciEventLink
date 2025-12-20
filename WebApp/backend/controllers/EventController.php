@@ -8,11 +8,15 @@ use common\models\OrganizerEvent;
 use common\models\Session;
 use common\models\TicketType;
 use common\models\Venue;
+use Exception;
 use Yii;
 use yii\data\ActiveDataProvider;
+use yii\filters\AccessControl;
 use yii\web\Controller;
+use yii\web\ForbiddenHttpException;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
+use yii\web\Response;
 
 /**
  * EventController implements the CRUD actions for Event model.
@@ -27,6 +31,15 @@ class EventController extends Controller
         return array_merge(
             parent::behaviors(),
             [
+                'access' => [
+                    'class' => AccessControl::class,
+                    'rules' => [
+                        [
+                            'allow' => true,
+                            'roles' => ['organizer', 'admin'],
+                        ],
+                    ],
+                ],
                 'verbs' => [
                     'class' => VerbFilter::className(),
                     'actions' => [
@@ -69,7 +82,7 @@ class EventController extends Controller
     /**
      * Creates a new Event model.
      * If creation is successful, the browser will be redirected to the 'view' page.
-     * @return string|\yii\web\Response
+     * @return string|Response
      */
     public function actionCreate()
     {
@@ -78,27 +91,27 @@ class EventController extends Controller
         if ($this->request->isPost) {
             if ($model->load($this->request->post())) {
 
-                $transaction = \Yii::$app->db->beginTransaction();
+                $transaction = Yii::$app->db->beginTransaction();
 
                 try {
                     if (!$model->save()) {
-                        throw new \Exception('Erro ao salvar evento.');
+                        throw new Exception('Erro ao salvar evento.');
                     }
                     $relation = new OrganizerEvent();
                     $relation->event_id = $model->id; // ID do evento recém-criado
-                    $relation->user_id = \Yii::$app->user->id; // ID de quem está logado
+                    $relation->user_id = Yii::$app->user->id; // ID de quem está logado
                     $relation->role_description = 'Criador/Dono';
 
                     if (!$relation->save()) {
-                        throw new \Exception('Erro ao associar organizador.');
+                        throw new Exception('Erro ao associar organizador.');
                     }
 
                     $transaction->commit();
                     return $this->redirect(['view', 'id' => $model->id]);
 
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     $transaction->rollBack();
-                    \Yii::$app->session->setFlash('error', $e->getMessage());
+                    Yii::$app->session->setFlash('error', $e->getMessage());
                 }
             }
         }
@@ -112,12 +125,16 @@ class EventController extends Controller
      * Updates an existing Event model.
      * If update is successful, the browser will be redirected to the 'view' page.
      * @param int $id ID
-     * @return string|\yii\web\Response
+     * @return string|Response
      * @throws NotFoundHttpException if the model cannot be found
      */
     public function actionUpdate($id)
     {
         $model = $this->findModel($id);
+
+        if (!Yii::$app->user->can('admin') && $model->created_by != Yii::$app->user->id) {
+            throw new ForbiddenHttpException('Você não tem permissão para editar este evento.');
+        }
 
         $venuesDataProvider = new ActiveDataProvider([
             'query' => Venue::find()->where(['event_id' => $id]),
@@ -153,7 +170,7 @@ class EventController extends Controller
      * Deletes an existing Event model.
      * If deletion is successful, the browser will be redirected to the 'index' page.
      * @param int $id ID
-     * @return \yii\web\Response
+     * @return Response
      * @throws NotFoundHttpException if the model cannot be found
      */
     public function actionDelete($id)
