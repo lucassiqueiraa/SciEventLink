@@ -3,7 +3,7 @@
 namespace backend\controllers;
 
 use common\models\Event;
-use backend\models\EventSearch;
+use common\models\EventSearch;
 use common\models\OrganizerEvent;
 use common\models\Session;
 use common\models\TicketType;
@@ -12,10 +12,10 @@ use Exception;
 use Yii;
 use yii\data\ActiveDataProvider;
 use yii\filters\AccessControl;
+use yii\filters\VerbFilter;
 use yii\web\Controller;
 use yii\web\ForbiddenHttpException;
 use yii\web\NotFoundHttpException;
-use yii\filters\VerbFilter;
 use yii\web\Response;
 
 /**
