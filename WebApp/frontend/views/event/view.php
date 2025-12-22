@@ -4,6 +4,7 @@ use yii\bootstrap5\BootstrapPluginAsset;
 use yii\helpers\Html;
 use yii\helpers\Url;
 
+// Regista o JS do Bootstrap 5 para as abas funcionarem
 BootstrapPluginAsset::register($this);
 
 /** @var yii\web\View $this */
@@ -67,12 +68,12 @@ $this->params['breadcrumbs'][] = $this->title;
                                 ?>
 
                                 <?php if ($currentDate !== $sessionDate): ?>
-                                    <div class="list-group-item list-group-item-secondary font-weight-bold text-uppercase mt-3">
-                                        <i class="far fa-calendar-check"></i>
-                                        <?= Yii::$app->formatter->asDate($session->start_time, 'full') ?>
-                                    </div>
-                                <?php $currentDate = $sessionDate; // Atualiza a data atual ?>
-                                <?php endif; ?>
+                                <div class="list-group-item list-group-item-secondary font-weight-bold text-uppercase mt-3">
+                                    <i class="far fa-calendar-check"></i>
+                                    <?= Yii::$app->formatter->asDate($session->start_time, 'full') ?>
+                                </div>
+                                <?php $currentDate = $sessionDate; ?>
+                            <?php endif; ?>
 
                                 <div class="list-group-item list-group-item-action flex-column align-items-start">
                                     <div class="d-flex w-100 justify-content-between">
@@ -111,15 +112,31 @@ $this->params['breadcrumbs'][] = $this->title;
                                         <div class="card-header bg-transparent border-success font-weight-bold text-success">
                                             <?= Html::encode($ticket->name) ?>
                                         </div>
-                                        <div class="card-body text-center">
+                                        <div class="card-body text-center d-flex flex-column">
                                             <h2 class="card-title pricing-card-title">
                                                 <?= Yii::$app->formatter->asCurrency($ticket->price, 'EUR') ?>
                                             </h2>
-                                            <p class="card-text"><?= Html::encode($ticket->name) ?></p>
+                                            <p class="card-text mb-4"><?= Html::encode($ticket->name) ?></p>
 
-                                            <button type="button" class="btn btn-lg btn-block btn-outline-success">
-                                                Selecionar
-                                            </button>
+                                            <div class="mt-auto">
+                                                <?php
+                                                if (Yii::$app->user->isGuest) {
+                                                    echo Html::a('Fazer Login para Comprar', ['site/login'], [
+                                                            'class' => 'btn btn-lg w-100 btn-outline-primary'
+                                                    ]);
+                                                } else {
+                                                    // USUÁRIO LOGADO: Botão de Inscrever (POST)
+                                                    echo Html::a('Inscrever', ['registration/create', 'ticket_type_id' => $ticket->id], [
+                                                            'class' => 'btn btn-lg w-100 btn-outline-success',
+                                                            'data' => [
+                                                                    'method' => 'post',
+                                                                    'confirm' => 'Tem a certeza que deseja inscrever-se neste bilhete?',
+                                                            ],
+                                                    ]);
+                                                }
+                                                ?>
+                                            </div>
+
                                         </div>
                                     </div>
                                 </div>

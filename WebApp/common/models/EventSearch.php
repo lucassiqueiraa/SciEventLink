@@ -43,12 +43,9 @@ class EventSearch extends Event
     {
         $query = Event::find();
 
-        $currentUser = Yii::$app->user->identity;
-        if ($currentUser && $currentUser->username !== 'admin') {
+        if (Yii::$app->id === 'app-backend' && !Yii::$app->user->can('admin')) {
             $query->andWhere(['created_by' => Yii::$app->user->id]);
         }
-
-        // add conditions that should always apply here
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
