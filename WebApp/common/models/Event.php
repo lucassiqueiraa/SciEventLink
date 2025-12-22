@@ -119,7 +119,8 @@ class Event extends \yii\db\ActiveRecord
      */
     public function getSessions()
     {
-        return $this->hasMany(Session::class, ['event_id' => 'id']);
+        return $this->hasMany(Session::class, ['event_id' => 'id'])
+                    ->orderBy(['start_time' => SORT_ASC]);
     }
 
     /**
