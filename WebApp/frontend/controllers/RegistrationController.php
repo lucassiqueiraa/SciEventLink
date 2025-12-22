@@ -3,6 +3,7 @@
 namespace frontend\controllers;
 
 use Yii;
+use yii\data\ActiveDataProvider;
 use yii\web\Controller;
 use yii\filters\AccessControl;
 use yii\filters\VerbFilter;
@@ -18,24 +19,20 @@ class RegistrationController extends Controller
     public function behaviors()
     {
         return [
-            // 1. Só deixa entrar quem está LOGADO
             'access' => [
                 'class' => AccessControl::class,
                 'rules' => [
                     [
                         'allow' => true,
-                        'actions' => ['create'],
-                        'roles' => ['@'], // @ = Autenticado
+                        'roles' => ['@'],
                     ],
                 ],
-                // Se não estiver logado, o Yii redireciona para Login automaticamente
-                // e depois volta para cá. Magia! ✨
             ],
-            // 2. A ação CREATE tem de ser POST (Melhor prática)
             'verbs' => [
                 'class' => VerbFilter::class,
                 'actions' => [
                     'create' => ['post'],
+                    'confirm-payment' => ['post'],
                 ],
             ],
         ];
@@ -68,4 +65,70 @@ class RegistrationController extends Controller
 
         return $this->redirect(['event/view', 'id' => $ticket->event_id]);
     }
+
+    /**
+     * List my tickets
+     */
+    public function actionIndex()
+    {
+        $dataProvider = new ActiveDataProvider([
+            'query' => Registration::find()
+                ->where(['user_id' => Yii::$app->user->id]) // Só os meus
+                ->with(['event', 'ticketType']) // Eager Loading para performance
+                ->orderBy(['registration_date' => SORT_DESC]),
+        ]);
+
+        return $this->render('index', [
+            'dataProvider' => $dataProvider,
+        ]);
+    }
+
+    /**
+     * Payment page(Checkout)
+     */
+    public function actionCheckout($id)
+    {
+        $model = $this->findModel($id);
+
+        if ($model->payment_status !== 'pending') {
+            Yii::$app->session->setFlash('info', 'Este bilhete já está pago.');
+            return $this->redirect(['index']);
+        }
+
+        return $this->render('checkout', [
+            'model' => $model,
+        ]);
+    }
+
+    /**
+     * Processing paymeny
+     */
+    public function actionConfirmPayment($id)
+    {
+        $model = $this->findModel($id);
+
+        // Simula processamento...
+
+        $model->payment_status = 'paid';
+
+        if ($model->save()) {
+            Yii::$app->session->setFlash('success', 'Pagamento confirmado! O seu bilhete está garantido.');
+        } else {
+            Yii::$app->session->setFlash('error', 'Erro ao processar pagamento.');
+        }
+
+        return $this->redirect(['index']);
+    }
+
+    protected function findModel($id)
+    {
+        $model = Registration::findOne(['id' => $id, 'user_id' => Yii::$app->user->id]);
+        if ($model !== null) {
+            return $model;
+        }
+        throw new NotFoundHttpException('Registo não encontrado.');
+    }
+
+
 }
+

@@ -104,13 +104,21 @@ $this->params['breadcrumbs'][] = $this->title;
                 <div class="tab-pane fade" id="bilhetes" role="tabpanel" aria-labelledby="bilhetes-tab">
                     <div class="row">
                         <?php if (empty($model->ticketTypes)): ?>
-                            <div class="col-12"><div class="alert alert-warning">Não há bilhetes disponíveis no momento.</div></div>
+                            <div class="col-12"><div class="alert alert-warning">Não há bilhetes disponíveis.</div></div>
                         <?php else: ?>
                             <?php foreach ($model->ticketTypes as $ticket): ?>
                                 <div class="col-md-4 mb-3">
-                                    <div class="card border-success h-100">
+                                    <?php
+                                    $isMyTicket = ($userRegistration && $userRegistration->ticket_type_id === $ticket->id);
+                                    $cardClass = $isMyTicket ? 'border-primary shadow' : 'border-success';
+                                    ?>
+
+                                    <div class="card <?= $cardClass ?> h-100">
                                         <div class="card-header bg-transparent border-success font-weight-bold text-success">
                                             <?= Html::encode($ticket->name) ?>
+                                            <?php if ($isMyTicket): ?>
+                                                <span class="badge bg-primary float-end">Meu Bilhete</span>
+                                            <?php endif; ?>
                                         </div>
                                         <div class="card-body text-center d-flex flex-column">
                                             <h2 class="card-title pricing-card-title">
@@ -121,22 +129,37 @@ $this->params['breadcrumbs'][] = $this->title;
                                             <div class="mt-auto">
                                                 <?php
                                                 if (Yii::$app->user->isGuest) {
-                                                    echo Html::a('Fazer Login para Comprar', ['site/login'], [
-                                                            'class' => 'btn btn-lg w-100 btn-outline-primary'
-                                                    ]);
-                                                } else {
-                                                    // USUÁRIO LOGADO: Botão de Inscrever (POST)
+                                                    // Caso 1: Visitante
+                                                    echo Html::a('Login para Comprar', ['site/login'], ['class' => 'btn btn-outline-primary w-100']);
+                                                }
+                                                elseif ($userRegistration) {
+                                                    // Já tem inscrição neste evento
+
+                                                    if ($isMyTicket) {
+                                                        if ($userRegistration->payment_status === 'paid' || $userRegistration->payment_status === 'confirmed') {
+                                                            echo '<button class="btn btn-success w-100 disabled"><i class="fas fa-check-circle"></i> Inscrição Confirmada</button>';
+                                                        } else {
+                                                            echo Html::a('<i class="fas fa-credit-card"></i> Pagar Agora',
+                                                                    ['registration/checkout', 'id' => $userRegistration->id],
+                                                                    ['class' => 'btn btn-warning w-100 font-weight-bold text-dark']
+                                                            );
+                                                        }
+                                                    } else {
+                                                        echo '<button class="btn btn-secondary w-100 disabled">Inscrito noutra categoria</button>';
+                                                    }
+                                                }
+                                                else {
+                                                    // Logado mas sem inscrição (Pode comprar)
                                                     echo Html::a('Inscrever', ['registration/create', 'ticket_type_id' => $ticket->id], [
                                                             'class' => 'btn btn-lg w-100 btn-outline-success',
                                                             'data' => [
                                                                     'method' => 'post',
-                                                                    'confirm' => 'Tem a certeza que deseja inscrever-se neste bilhete?',
+                                                                    'confirm' => 'Confirmar inscrição neste bilhete?',
                                                             ],
                                                     ]);
                                                 }
                                                 ?>
                                             </div>
-
                                         </div>
                                     </div>
                                 </div>
@@ -144,8 +167,6 @@ $this->params['breadcrumbs'][] = $this->title;
                         <?php endif; ?>
                     </div>
                 </div>
-
-            </div>
         </div>
     </div>
 </div>
