@@ -37,6 +37,12 @@ AppAsset::register($this);
     $menuItems = [
         ['label' => 'Home', 'url' => ['/site/index']],
         ['label' => 'Eventos', 'url' => ['/event/index']],
+            [
+                    'label' => 'Inscrições / Vendas',
+                    'icon' => 'shopping-cart', // Ou 'money-bill'
+                    'url' => ['/registration/index'],
+                    'visible' => !Yii::$app->user->isGuest // Visível para Admin e Organizer
+            ],
     ];
     if (Yii::$app->user->isGuest) {
         $menuItems[] = ['label' => 'Login', 'url' => ['/site/login']];
