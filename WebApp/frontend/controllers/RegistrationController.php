@@ -120,6 +120,22 @@ class RegistrationController extends Controller
         return $this->redirect(['index']);
     }
 
+    public function actionTicket($id)
+    {
+        // Garante que o user só baixa o PRÓPRIO bilhete
+        $model = Registration::find()
+            ->where(['id' => $id, 'user_id' => Yii::$app->user->id])
+            ->andWhere(['payment_status' => ['paid', 'confirmed']])
+            ->one();
+
+        if (!$model) {
+            Yii::$app->session->setFlash('error', 'Bilhete indisponível.');
+            return $this->redirect(['index']);
+        }
+
+        return $model->generateTicketPdf();
+    }
+
     protected function findModel($id)
     {
         $model = Registration::findOne(['id' => $id, 'user_id' => Yii::$app->user->id]);

@@ -2,7 +2,10 @@
 
 namespace common\models;
 
+use kartik\mpdf\Pdf;
 use Yii;
+use yii\db\ActiveQuery;
+use yii\db\ActiveRecord;
 
 /**
  * This is the model class for table "registration".
@@ -19,7 +22,7 @@ use Yii;
  * @property TicketType $ticketType
  * @property User $user
  */
-class Registration extends \yii\db\ActiveRecord
+class Registration extends ActiveRecord
 {
 
     /**
@@ -74,7 +77,7 @@ class Registration extends \yii\db\ActiveRecord
     /**
      * Gets query for [[Articles]].
      *
-     * @return \yii\db\ActiveQuery
+     * @return ActiveQuery
      */
     public function getArticles()
     {
@@ -84,7 +87,7 @@ class Registration extends \yii\db\ActiveRecord
     /**
      * Gets query for [[Event]].
      *
-     * @return \yii\db\ActiveQuery
+     * @return ActiveQuery
      */
     public function getEvent()
     {
@@ -94,7 +97,7 @@ class Registration extends \yii\db\ActiveRecord
     /**
      * Gets query for [[TicketType]].
      *
-     * @return \yii\db\ActiveQuery
+     * @return ActiveQuery
      */
     public function getTicketType()
     {
@@ -104,7 +107,7 @@ class Registration extends \yii\db\ActiveRecord
     /**
      * Gets query for [[User]].
      *
-     * @return \yii\db\ActiveQuery
+     * @return ActiveQuery
      */
     public function getUser()
     {
@@ -170,5 +173,35 @@ class Registration extends \yii\db\ActiveRecord
     public function setPaymentStatusToCancelled()
     {
         $this->payment_status = self::PAYMENT_STATUS_CANCELLED;
+    }
+
+    /**
+     * Gera o PDF do bilhete e retorna o objeto mPDF ou envia para o browser.
+     * @return mixed
+     */
+    public function generateTicketPdf()
+    {
+        // Define o caminho para a view que criámos
+        // Atenção: O caminho é relativo à aplicação que chama, então usamos alias
+        $content = Yii::$app->controller->renderPartial('@common/views/pdf/ticket', [
+            'model' => $this
+        ]);
+
+        // Configuração do PDF
+        $pdf = new Pdf([
+            'mode' => Pdf::MODE_UTF8,
+            'format' => Pdf::FORMAT_A4,
+            'orientation' => Pdf::ORIENT_PORTRAIT,
+            'destination' => Pdf::DEST_BROWSER, // Mostra no navegador
+            'content' => $content,
+            'cssInline' => '.kv-heading-1{font-size:18px}',
+            'options' => ['title' => 'Bilhete - ' . $this->event->name],
+            'methods' => [
+                'SetHeader' => ['SciEventLink - Bilhete Eletrónico'],
+                'SetFooter' => ['{PAGENO}'],
+            ]
+        ]);
+
+        return $pdf->render();
     }
 }

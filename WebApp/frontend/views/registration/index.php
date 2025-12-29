@@ -91,30 +91,39 @@ $this->params['breadcrumbs'][] = $this->title;
                         },
                     ],
 
-                    // Botões de Ação (A grande correção!)
                     [
                         'class' => 'yii\grid\ActionColumn',
                         'header' => 'Ações',
-                        'template' => '{pay} {view}',
+                        'template' => '{pay} {view} {ticket}',
                         'contentOptions' => ['class' => 'text-end pe-4', 'style' => 'min-width: 200px;'],
                         'headerOptions' => ['class' => 'text-end pe-4'],
                         'buttons' => [
-                            // Botão PAGAR (Grande e visível)
-                            'pay' => function ($url, $model) {
-                                if ($model->payment_status === 'pending') {
-                                    return Html::a('<i class="fas fa-credit-card"></i> Pagar Agora', ['checkout', 'id' => $model->id], [
-                                        'class' => 'btn btn-sm btn-primary shadow-sm me-2 fw-bold',
-                                        'style' => 'min-width: 110px;'
+                                'pay' => function ($url, $model) {
+                                    if ($model->payment_status === 'pending') {
+                                        return Html::a('<i class="fas fa-credit-card"></i> Pagar', ['checkout', 'id' => $model->id], [
+                                                'class' => 'btn btn-sm btn-primary shadow-sm me-1 fw-bold',
+                                        ]);
+                                    }
+                                    return '';
+                                },
+
+                                'ticket' => function ($url, $model) {
+                                    if ($model->payment_status === 'paid' || $model->payment_status === 'confirmed') {
+                                        return Html::a('<i class="fas fa-file-pdf"></i> Bilhete', ['ticket', 'id' => $model->id], [
+                                                'class' => 'btn btn-sm btn-danger shadow-sm me-1', // Mudei para btn-danger (vermelho) para destacar PDF
+                                                'target' => '_blank',
+                                                'data-pjax' => '0',
+                                                'title' => 'Baixar PDF'
+                                        ]);
+                                    }
+                                    return '';
+                                },
+
+                                'view' => function ($url, $model) {
+                                    return Html::a('Detalhes', ['event/view', 'id' => $model->event_id], [
+                                        'class' => 'btn btn-sm btn-outline-secondary',
                                     ]);
-                                }
-                                return '';
-                            },
-                            // Botão VER (Agora com texto e borda)
-                            'view' => function ($url, $model) {
-                                return Html::a('Detalhes', ['event/view', 'id' => $model->event_id], [
-                                    'class' => 'btn btn-sm btn-outline-secondary',
-                                ]);
-                            },
+                                },
                         ],
                     ],
                 ],

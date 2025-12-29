@@ -68,12 +68,24 @@ class RegistrationController extends Controller
         return $this->redirect(['index']);
     }
 
+    public function actionTicket($id)
+    {
+        $model = $this->findModel($id); // O findModel já protege (Admin vê tudo, Org vê dele)
+
+        if ($model->payment_status !== 'paid' && $model->payment_status !== 'confirmed') {
+            Yii::$app->session->setFlash('warning', 'Atenção: Este bilhete ainda não está pago.');
+            // TODO: Impedir download ou deixar baixar com aviso
+        }
+
+        return $model->generateTicketPdf();
+    }
+
     /**
      * Garante que o Organizador só acessa o que é dele
      */
     protected function findModel($id)
     {
-        $query = Registration::find()->where(['id' => $id]);
+        $query = Registration::find()->where(['registration.id' => $id]);
 
         // Se não for admin, adiciona a trava de segurança na busca
         if (!Yii::$app->user->can('admin')) {

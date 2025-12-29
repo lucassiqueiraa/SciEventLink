@@ -26,122 +26,134 @@ $this->params['breadcrumbs'][] = $this->title;
     <div class="card-body p-0">
         <div class="table-responsive">
             <?= GridView::widget([
-                'dataProvider' => $dataProvider,
-                'filterModel' => $searchModel,
-                // Removemos bordas duplas e adicionamos hover suave
-                'tableOptions' => ['class' => 'table table-hover table-striped align-middle mb-0', 'id' => 'dataTable', 'width' => '100%'],
-                'layout' => "{items}\n<div class='p-3 d-flex justify-content-between align-items-center'>{summary}{pager}</div>",
-                'columns' => [
+                    'dataProvider' => $dataProvider,
+                    'filterModel' => $searchModel,
+                    'tableOptions' => ['class' => 'table table-hover table-striped align-middle mb-0', 'id' => 'dataTable', 'width' => '100%'],
+                    'layout' => "{items}\n<div class='p-3 d-flex justify-content-between align-items-center'>{summary}{pager}</div>",
+                    'columns' => [
 
-                    [
-                        'attribute' => 'id',
-                        'headerOptions' => ['style' => 'width:60px; text-align:center;'],
-                        'contentOptions' => ['class' => 'text-center text-muted fw-bold'],
+                        // ID
+                            [
+                                    'attribute' => 'id',
+                                    'headerOptions' => ['style' => 'width: 50px; text-align:center;'],
+                                    'contentOptions' => ['class' => 'text-center text-muted fw-bold'],
+                            ],
+
+                        // Participante
+                            [
+                                    'attribute' => 'user_email',
+                                    'label' => 'Participante',
+                                    'format' => 'raw',
+                                    'value' => function ($model) {
+                                        $user = $model->user;
+                                        return '<div class="d-flex align-items-center">' .
+                                                '<div class="bg-light rounded-circle p-1 me-2 text-primary d-flex justify-content-center align-items-center" style="width: 30px; height: 30px;">' .
+                                                '<i class="fas fa-user small"></i>' .
+                                                '</div>' .
+                                                '<div style="line-height: 1.1;">' .
+                                                '<div class="fw-bold text-dark text-truncate" style="max-width: 180px;">' . Html::encode($user->username) . '</div>' .
+                                                '<div class="small text-muted text-truncate" style="max-width: 180px;">' . Html::encode($user->email) . '</div>' .
+                                                '</div>' .
+                                                '</div>';
+                                    },
+                            ],
+
+                        // Evento
+                            [
+                                    'attribute' => 'event_name',
+                                    'label' => 'Evento',
+                                    'format' => 'raw',
+                                    'value' => function ($model) {
+                                        return '<div class="text-truncate" style="max-width: 180px; font-weight: 500;">' .
+                                                '<i class="fas fa-calendar-day text-muted me-1 small"></i>' . Html::encode($model->event->name) .
+                                                '</div>';
+                                    },
+                            ],
+
+                        // Bilhete
+                            [
+                                    'label' => 'Bilhete',
+                                    'format' => 'raw',
+                                    'headerOptions' => ['style' => 'width: 130px;'],
+                                    'value' => function ($model) {
+                                        // "align-items-start" garante que ficam alinhados à esquerda, um embaixo do outro
+                                        return '<div class="d-flex flex-column align-items-start">' .
+                                                '<span class="badge bg-light text-dark border mb-1">' . Html::encode($model->ticketType->name) . '</span>' .
+                                                '<span class="fw-bold text-success small">' . Yii::$app->formatter->asCurrency($model->ticketType->price, 'EUR') . '</span>' .
+                                                '</div>';
+                                    },
+                            ],
+
+                        // Data
+                            [
+                                    'attribute' => 'registration_date',
+                                    'label' => 'Data',
+                                    'format' => ['date', 'php:d/m/y'],
+                                    'filter' => false,
+                                    'headerOptions' => ['style' => 'width: 80px; text-align:center;'],
+                                    'contentOptions' => ['class' => 'small text-muted text-center'],
+                            ],
+
+                        // Status
+                            [
+                                    'attribute' => 'payment_status',
+                                    'format' => 'raw',
+                                    'headerOptions' => ['class' => 'text-center', 'style' => 'width: 100px;'],
+                                    'contentOptions' => ['class' => 'text-center'],
+                                    'filter' => [
+                                            'pending' => 'Pendente',
+                                            'paid' => 'Pago',
+                                            'confirmed' => 'Confirmado',
+                                            'canceled' => 'Cancelado'
+                                    ],
+                                    'value' => function ($model) {
+                                        $statusMap = [
+                                                'paid' => ['class' => 'bg-success text-white', 'label' => 'Pago'],
+                                                'confirmed' => ['class' => 'bg-success text-white', 'label' => 'Pago'],
+                                                'pending' => ['class' => 'bg-warning text-dark', 'label' => 'Pend.'],
+                                                'canceled' => ['class' => 'bg-danger text-white', 'label' => 'Canc.'],
+                                        ];
+                                        $status = $model->payment_status;
+                                        $config = $statusMap[$status] ?? ['class' => 'bg-secondary', 'label' => $status];
+
+                                        return '<span class="badge ' . $config['class'] . ' rounded-pill small">' . $config['label'] . '</span>';
+                                    },
+                            ],
+
+                        // AÇÕES (BOTÕES CORRIGIDOS)
+                            [
+                                    'class' => 'yii\grid\ActionColumn',
+                                    'template' => '{mark-paid} {ticket}', // Usei mark-paid em vez de action para ficar claro
+                                    'header' => 'Ações',
+                                    'contentOptions' => ['class' => 'text-center text-nowrap', 'style' => 'width: 160px;'],
+                                    'buttons' => [
+                                        // Botão Validar
+                                            'mark-paid' => function ($url, $model, $key) {
+                                                if ($model->payment_status === 'pending') {
+                                                    return Html::a('<i class="fas fa-check"></i>', ['mark-paid', 'id' => $model->id], [
+                                                            'class' => 'btn btn-sm btn-outline-success me-1',
+                                                            'title' => 'Validar',
+                                                            'data' => [
+                                                                    'confirm' => 'Confirmar pagamento?',
+                                                                    'method' => 'post',
+                                                            ],
+                                                    ]);
+                                                }
+                                                return '';
+                                            },
+
+                                        // Botão PDF
+                                            'ticket' => function ($url, $model) {
+                                                return Html::a('<i class="fas fa-print"></i> PDF', ['ticket', 'id' => $model->id], [
+                                                        'class' => 'btn btn-sm btn-danger',
+                                                        'target' => '_blank',
+                                                        'data-pjax' => '0',
+                                                        'title' => 'Imprimir Bilhete'
+                                                ]);
+                                            },
+                                    ],
+                            ],
                     ],
-
-                    [
-                        'attribute' => 'user_email',
-                        'label' => 'Participante',
-                        'format' => 'raw',
-                        'value' => function ($model) {
-                            $user = $model->user;
-                            return '<div class="d-flex align-items-center">' .
-                                '<div class="bg-light rounded-circle p-2 me-2 text-primary d-flex justify-content-center align-items-center" style="width: 40px; height: 40px;">' .
-                                '<i class="fas fa-user"></i>' .
-                                '</div>' .
-                                '<div>' .
-                                '<div class="fw-bold text-dark">' . Html::encode($user->username) . '</div>' .
-                                '<div class="small text-muted">' . Html::encode($user->email) . '</div>' .
-                                '</div>' .
-                                '</div>';
-                        },
-                    ],
-
-                    // Evento
-                    [
-                        'attribute' => 'event_name',
-                        'label' => 'Evento',
-                        'format' => 'raw',
-                        'value' => function ($model) {
-                            return '<span class="fw-bold text-dark"><i class="fas fa-calendar-day text-muted me-1"></i>' . Html::encode($model->event->name) . '</span>';
-                        },
-                    ],
-
-                    // Bilhete e Valor (Destaque no Dinheiro)
-                    [
-                        'label' => 'Bilhete / Valor',
-                        'format' => 'raw',
-                        'contentOptions' => ['style' => 'min-width: 150px;'],
-                        'value' => function ($model) {
-                            return '<div class="d-flex flex-column">' .
-                                '<span class="badge bg-light text-dark border mb-1" style="width: fit-content;">' . Html::encode($model->ticketType->name) . '</span>' .
-                                '<span class="fw-bold text-success">' . Yii::$app->formatter->asCurrency($model->ticketType->price, 'EUR') . '</span>' .
-                                '</div>';
-                        },
-                    ],
-
-                    [
-                        'attribute' => 'registration_date',
-                        'label' => 'Data',
-                        'format' => ['date', 'php:d/m/Y H:i'],
-                        'filter' => false,
-                        'contentOptions' => ['class' => 'small text-muted'],
-                    ],
-
-                    [
-                        'attribute' => 'payment_status',
-                        'format' => 'raw',
-                        'headerOptions' => ['class' => 'text-center'],
-                        'contentOptions' => ['class' => 'text-center'],
-                        'filter' => [
-                            'pending' => 'Pendente',
-                            'paid' => 'Pago',
-                            'confirmed' => 'Confirmado',
-                            'canceled' => 'Cancelado'
-                        ],
-                        'value' => function ($model) {
-                            // Mapeamento de Status -> Design
-                            $statusMap = [
-                                'paid' => ['class' => 'bg-success text-white', 'icon' => 'check-circle', 'label' => 'Pago'],
-                                'confirmed' => ['class' => 'bg-success text-white', 'icon' => 'check-circle', 'label' => 'Confirmado'],
-                                'pending' => ['class' => 'bg-warning text-dark', 'icon' => 'clock', 'label' => 'Pendente'], // text-dark garante leitura
-                                'canceled' => ['class' => 'bg-danger text-white', 'icon' => 'times-circle', 'label' => 'Cancelado'],
-                            ];
-
-                            $status = $model->payment_status;
-                            // Fallback caso status não esteja no mapa
-                            $config = $statusMap[$status] ?? ['class' => 'bg-secondary text-white', 'icon' => 'question', 'label' => $status];
-
-                            return '<span class="badge ' . $config['class'] . ' p-2 rounded-pill shadow-sm" style="min-width: 100px;">' .
-                                '<i class="fas fa-' . $config['icon'] . ' me-1"></i> ' . $config['label'] .
-                                '</span>';
-                        },
-                    ],
-
-                    [
-                        'class' => 'yii\grid\ActionColumn',
-                        'template' => '{action}',
-                        'header' => 'Ações',
-                        'contentOptions' => ['class' => 'text-center', 'style' => 'width: 160px;'],
-                        'buttons' => [
-                            'action' => function ($url, $model, $key) {
-                                // Se PENDENTE -> Botão de Validar
-                                if ($model->payment_status === 'pending') {
-                                    return Html::a('<i class="fas fa-check"></i> Validar', ['mark-paid', 'id' => $model->id], [
-                                        'class' => 'btn btn-sm btn-outline-success w-100 fw-bold',
-                                        'title' => 'Confirmar Pagamento Manualmente',
-                                        'data' => [
-                                            'confirm' => 'Confirmar recebimento de pagamento para este bilhete?',
-                                            'method' => 'post',
-                                        ],
-                                    ]);
-                                }
-
-                                return '<button class="btn btn-sm btn-light w-100 text-muted border" disabled><i class="fas fa-lock"></i> Concluído</button>';
-                            },
-                        ],
-                    ],
-                ],
             ]); ?>
         </div>
     </div>
