@@ -6,8 +6,9 @@ use Yii;
 use yii\web\Controller;
 use yii\filters\AccessControl;
 use common\models\Event;
-use common\models\Session; // Se existir
-use common\models\Venue;   // Se existir
+use common\models\Session;
+use common\models\Venue;
+use common\models\Registration;
 
 class OrganizerDashboardController extends Controller
 {
@@ -19,7 +20,6 @@ class OrganizerDashboardController extends Controller
                 'rules' => [
                     [
                         'allow' => true,
-                        // Permitimos admin aqui também para debug, se quiser
                         'roles' => ['organizer', 'admin'],
                     ],
                 ],
@@ -31,15 +31,25 @@ class OrganizerDashboardController extends Controller
     {
         $userId = Yii::$app->user->id;
 
-        // Lógica exclusiva do Organizador (Meus Dados)
-        $myEvents = Event::find()->where(['created_by' => $userId])->count();
+        $myRevenue = Registration::find()
+            ->alias('r')
+            ->joinWith(['ticketType t', 'event e'])
+            ->where(['r.payment_status' => ['paid', 'confirmed']])
+            ->andWhere(['e.created_by' => $userId]) // Só meus eventos
+            ->sum('t.price') ?? 0;
 
-        // Ajuste os joins conforme seus models reais
+        $myAttendees = Registration::find()
+            ->joinWith('event e')
+            ->where(['e.created_by' => $userId])
+            ->count();
+
+        $myEvents = Event::find()->where(['created_by' => $userId])->count();
         $mySessions = Session::find()->joinWith('event')->where(['event.created_by' => $userId])->count();
         $myVenues = Venue::find()->joinWith('event')->where(['event.created_by' => $userId])->count();
 
-        // Renderiza views/organizer-dashboard/index.php
         return $this->render('index', [
+            'myRevenue' => $myRevenue,
+            'myAttendees' => $myAttendees,
             'myEvents' => $myEvents,
             'mySessions' => $mySessions,
             'myVenues' => $myVenues,

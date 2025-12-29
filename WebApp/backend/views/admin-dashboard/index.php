@@ -4,6 +4,8 @@ use yii\helpers\Html;
 use yii\helpers\Url;
 
 /** @var yii\web\View $this */
+/** @var float $totalRevenue */
+/** @var int $totalTicketsSold */
 /** @var int $totalParticipants */
 /** @var int $totalOrganizers */
 /** @var int $totalEvents */
@@ -19,6 +21,43 @@ $this->params['breadcrumbs'][] = $this->title;
         <h1 class="h2"><i class="fas fa-tachometer-alt"></i> Visão Geral do Sistema</h1>
     </div>
 
+    <div class="row mb-4">
+        <div class="col-xl-6 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Receita Total (Confirmada)</div>
+                            <div class="h3 mb-0 font-weight-bold text-gray-800">
+                                <?= Yii::$app->formatter->asCurrency($totalRevenue, 'EUR') ?>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-euro-sign fa-2x text-gray-300 text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-6 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Bilhetes Emitidos</div>
+                            <div class="h3 mb-0 font-weight-bold text-gray-800"><?= $totalTicketsSold ?></div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-ticket-alt fa-2x text-gray-300 text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="row">
         <div class="col-lg-3 col-md-6 mb-4">
             <div class="card border-left-success shadow h-100 py-2">
@@ -36,7 +75,6 @@ $this->params['breadcrumbs'][] = $this->title;
                 </div>
             </div>
         </div>
-
         <div class="col-lg-3 col-md-6 mb-4">
             <div class="card border-left-info shadow h-100 py-2">
                 <div class="card-body">
@@ -105,10 +143,13 @@ $this->params['breadcrumbs'][] = $this->title;
                         <span class="icon text-white-50"><i class="fas fa-list"></i></span>
                         <span class="text">Listar Todos</span>
                     </a>
+                    <a href="<?= Url::to(['/registration/index']) ?>" class="btn btn-success btn-icon-split mb-2">
+                        <span class="icon text-white-50"><i class="fas fa-money-bill"></i></span>
+                        <span class="text">Gerir Vendas</span>
+                    </a>
                 </div>
             </div>
         </div>
-
         <div class="col-md-6">
             <div class="card shadow mb-4">
                 <div class="card-header py-3">
@@ -123,5 +164,4 @@ $this->params['breadcrumbs'][] = $this->title;
             </div>
         </div>
     </div>
-
 </div>

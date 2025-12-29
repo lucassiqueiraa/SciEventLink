@@ -7,6 +7,7 @@ use yii\web\Controller;
 use yii\filters\AccessControl;
 use common\models\User;
 use common\models\Event;
+use common\models\Registration; // <--- ADICIONAR ISTO
 
 class AdminDashboardController extends Controller
 {
@@ -18,7 +19,7 @@ class AdminDashboardController extends Controller
                 'rules' => [
                     [
                         'allow' => true,
-                        'roles' => ['admin'], // BLINDADO: Só admin entra aqui
+                        'roles' => ['admin'],
                     ],
                 ],
             ],
@@ -27,7 +28,12 @@ class AdminDashboardController extends Controller
 
     public function actionIndex()
     {
-        // Lógica exclusiva do Admin (Contagem Global)
+        $totalRevenue = Registration::find()
+            ->joinWith('ticketType')
+            ->where(['payment_status' => ['paid', 'confirmed']])
+            ->sum('ticket_type.price') ?? 0;
+
+        $totalTicketsSold = Registration::find()->count();
 
         $totalParticipants = User::find()
             ->joinWith('userProfile')
@@ -43,8 +49,9 @@ class AdminDashboardController extends Controller
 
         $suspendedUsers = User::find()->where(['!=', 'status', 10])->count();
 
-        // Renderiza views/admin-dashboard/index.php
         return $this->render('index', [
+            'totalRevenue' => $totalRevenue,
+            'totalTicketsSold' => $totalTicketsSold,
             'totalParticipants' => $totalParticipants,
             'totalOrganizers' => $totalOrganizers,
             'totalEvents' => $totalEvents,
