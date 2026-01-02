@@ -1,5 +1,6 @@
 <?php
 return [
+    'name' => 'SciEventLink',
     'aliases' => [
         '@bower' => '@vendor/bower-asset',
         '@npm'   => '@vendor/npm-asset',
