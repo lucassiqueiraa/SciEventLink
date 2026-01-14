@@ -48,8 +48,8 @@ class Registration extends ActiveRecord
         return [
             [['payment_status'], 'default', 'value' => 'pending'],
             [['user_id', 'event_id', 'ticket_type_id'], 'required'],
-            [['user_id', 'event_id', 'ticket_type_id'], 'integer'],
-            [['registration_date'], 'safe'],
+            [['user_id', 'event_id', 'ticket_type_id', 'checkin_by'], 'integer'],
+            [['registration_date', 'checkint_at'], 'safe'],
             [['payment_status'], 'string'],
             ['payment_status', 'in', 'range' => array_keys(self::optsPaymentStatus())],
             [['user_id', 'event_id'], 'unique', 'targetAttribute' => ['user_id', 'event_id']],
@@ -71,6 +71,8 @@ class Registration extends ActiveRecord
             'ticket_type_id' => 'Ticket Type ID',
             'registration_date' => 'Registration Date',
             'payment_status' => 'Payment Status',
+            'checkin_at' => 'Check-in date',
+            'checkin_by' => 'Validated By',
         ];
     }
 
@@ -173,6 +175,14 @@ class Registration extends ActiveRecord
     public function setPaymentStatusToCancelled()
     {
         $this->payment_status = self::PAYMENT_STATUS_CANCELLED;
+    }
+
+    /**
+     * who validates the ticket
+     */
+    public function getChecker()
+    {
+        return $this->hasOne(User::class, ['id' => 'checkin_by']);
     }
 
     /**

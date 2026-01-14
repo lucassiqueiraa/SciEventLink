@@ -2,6 +2,9 @@
 
 use yii\db\Migration;
 
+/**
+ * Handles adding columns to table `{{%registration}}`.
+ */
 class m251208_195717_add_created_by_to_event_table extends Migration
 {
     /**
@@ -9,26 +12,17 @@ class m251208_195717_add_created_by_to_event_table extends Migration
      */
     public function safeUp()
     {
-        $this->addColumn('{{%event}}', 'created_by', $this->integer());
-        $this->addColumn('{{%event}}', 'updated_by', $this->integer());
+        $this->addColumn('{{%registration}}', 'checkin_at', $this->dateTime()->null()->after('id'));
+
+        $this->addColumn('{{%registration}}', 'checkin_by', $this->integer()->null()->after('checkin_at'));
 
         $this->addForeignKey(
-            'fk-event-created_by',
-            '{{%event}}',
-            'created_by',
+            'fk-registration-checkin_by',
+            '{{%registration}}',
+            'checkin_by',
             '{{%user}}',
             'id',
-            'CASCADE',
-            'CASCADE'
-        );
-
-        $this->addForeignKey(
-            'fk-event-updated_by',
-            '{{%event}}',
-            'updated_by',
-            '{{%user}}',
-            'id',
-            'CASCADE',
+            'SET NULL',
             'CASCADE'
         );
     }
@@ -38,11 +32,10 @@ class m251208_195717_add_created_by_to_event_table extends Migration
      */
     public function safeDown()
     {
-        $this->dropForeignKey('fk-event-updated_by', '{{%event}}');
-        $this->dropForeignKey('fk-event-created_by', '{{%event}}');
+        $this->dropForeignKey('fk-registration-checkin_by', '{{%registration}}');
 
-        $this->dropColumn('{{%event}}', 'updated_by');
-        $this->dropColumn('{{%event}}', 'created_by');
+        $this->dropColumn('{{%registration}}', 'checkin_by');
+        $this->dropColumn('{{%registration}}', 'checkin_at');
     }
 
     /*
