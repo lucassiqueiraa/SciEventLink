@@ -116,7 +116,6 @@ document.addEventListener('DOMContentLoaded', function() {
             { fps: 10, qrbox: { width: 250, height: 250 } },
             false
         );
-        html5QrcodeScanner.render(onScanSuccess, onScanFailure);
     }
 
     const btnManual = document.querySelector('#manual-btn');L

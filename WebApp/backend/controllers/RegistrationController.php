@@ -80,6 +80,33 @@ class RegistrationController extends Controller
         return $model->generateTicketPdf();
     }
 
+
+    /**
+     * Realiza o Check-in Manual de um participante.
+     * @param int $id ID da Inscrição
+     * @return \yii\web\Response
+     */
+    public function actionCheckin($id)
+    {
+        $model = $this->findModel($id);
+
+        if ($model->checkin_at !== null) {
+            \Yii::$app->session->setFlash('warning', 'Este participante já tinha feito check-in em: ' . $model->checkin_at);
+            return $this->redirect(['index']);
+        }
+
+        $model->checkin_at = date('Y-m-d H:i:s');
+        $model->checkin_by = \Yii::$app->user->id;
+
+        if ($model->save()) {
+            \Yii::$app->session->setFlash('success', 'Check-in manual realizado com sucesso!');
+        } else {
+            \Yii::$app->session->setFlash('error', 'Erro ao realizar check-in.');
+        }
+
+        return $this->redirect(['index']);
+    }
+
     /**
      * Garante que o Organizador só acessa o que é dele
      */

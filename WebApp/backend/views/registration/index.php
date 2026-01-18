@@ -32,14 +32,14 @@ $this->params['breadcrumbs'][] = $this->title;
                     'layout' => "{items}\n<div class='p-3 d-flex justify-content-between align-items-center'>{summary}{pager}</div>",
                     'columns' => [
 
-                        // ID
+                        // Id
                             [
                                     'attribute' => 'id',
                                     'headerOptions' => ['style' => 'width: 50px; text-align:center;'],
                                     'contentOptions' => ['class' => 'text-center text-muted fw-bold'],
                             ],
 
-                        // Participante
+                        // participant
                             [
                                     'attribute' => 'user_email',
                                     'label' => 'Participante',
@@ -58,7 +58,7 @@ $this->params['breadcrumbs'][] = $this->title;
                                     },
                             ],
 
-                        // Evento
+                        // Event
                             [
                                     'attribute' => 'event_name',
                                     'label' => 'Evento',
@@ -70,13 +70,12 @@ $this->params['breadcrumbs'][] = $this->title;
                                     },
                             ],
 
-                        // Bilhete
+                        // Ticket
                             [
                                     'label' => 'Bilhete',
                                     'format' => 'raw',
                                     'headerOptions' => ['style' => 'width: 130px;'],
                                     'value' => function ($model) {
-                                        // "align-items-start" garante que ficam alinhados à esquerda, um embaixo do outro
                                         return '<div class="d-flex flex-column align-items-start">' .
                                                 '<span class="badge bg-light text-dark border mb-1">' . Html::encode($model->ticketType->name) . '</span>' .
                                                 '<span class="fw-bold text-success small">' . Yii::$app->formatter->asCurrency($model->ticketType->price, 'EUR') . '</span>' .
@@ -94,7 +93,7 @@ $this->params['breadcrumbs'][] = $this->title;
                                     'contentOptions' => ['class' => 'small text-muted text-center'],
                             ],
 
-                        // Status
+                        // Payment status
                             [
                                     'attribute' => 'payment_status',
                                     'format' => 'raw',
@@ -120,19 +119,50 @@ $this->params['breadcrumbs'][] = $this->title;
                                     },
                             ],
 
-                        // AÇÕES (BOTÕES CORRIGIDOS)
+                        // CHECK-IN MANUAL
+                            [
+                                    'label' => 'Acesso',
+                                    'format' => 'raw',
+                                    'headerOptions' => ['class' => 'text-center', 'style' => 'width: 120px;'],
+                                    'contentOptions' => ['class' => 'text-center'],
+                                    'value' => function ($model) {
+                                        if ($model->checkin_at) {
+
+                                            return '<div class="d-flex flex-column align-items-center">' .
+                                                    '<span class="badge bg-success mb-1"><i class="fas fa-check-circle"></i> Validado</span>' .
+                                                    '<small class="text-muted" style="font-size: 0.75rem;">' .
+                                                    Yii::$app->formatter->asTime($model->checkin_at, 'short') .
+                                                    '</small>' .
+                                                    '</div>';
+                                        }
+
+                                        if ($model->payment_status !== 'paid' && $model->payment_status !== 'confirmed') {
+                                            return '<span class="text-muted small"><i class="fas fa-ban"></i> Aguarda Pagamento</span>';
+                                        }
+
+                                        return Html::a('<i class="fas fa-sign-in-alt"></i> Entrou', ['checkin', 'id' => $model->id], [
+                                                'class' => 'btn btn-sm btn-outline-primary shadow-sm',
+                                                'title' => 'Marcar entrada manualmente',
+                                                'data' => [
+                                                        'confirm' => 'Confirmar a entrada deste participante?',
+                                                        'method' => 'post',
+                                                ],
+                                        ]);
+                                    },
+                            ],
+
+                        // Actions
                             [
                                     'class' => 'yii\grid\ActionColumn',
-                                    'template' => '{mark-paid} {ticket}', // Usei mark-paid em vez de action para ficar claro
+                                    'template' => '{mark-paid} {ticket}',
                                     'header' => 'Ações',
                                     'contentOptions' => ['class' => 'text-center text-nowrap', 'style' => 'width: 160px;'],
                                     'buttons' => [
-                                        // Botão Validar
                                             'mark-paid' => function ($url, $model, $key) {
                                                 if ($model->payment_status === 'pending') {
                                                     return Html::a('<i class="fas fa-check"></i>', ['mark-paid', 'id' => $model->id], [
                                                             'class' => 'btn btn-sm btn-outline-success me-1',
-                                                            'title' => 'Validar',
+                                                            'title' => 'Validar Pagamento',
                                                             'data' => [
                                                                     'confirm' => 'Confirmar pagamento?',
                                                                     'method' => 'post',
@@ -141,8 +171,6 @@ $this->params['breadcrumbs'][] = $this->title;
                                                 }
                                                 return '';
                                             },
-
-                                        // Botão PDF
                                             'ticket' => function ($url, $model) {
                                                 return Html::a('<i class="fas fa-print"></i> PDF', ['ticket', 'id' => $model->id], [
                                                         'class' => 'btn btn-sm btn-danger',
