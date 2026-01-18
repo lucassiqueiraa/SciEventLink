@@ -19,8 +19,8 @@ class CheckinController extends Controller
             'rules' => [
                 [
                     'allow' => true,
-                    'actions' => ['validate'], // A tua função actionValidate
-                    'roles' => ['?'], // '?' significa "Qualquer pessoa (mesmo não logada)"
+                    'actions' => ['validate'],
+                    'roles' => ['?', '@'],
                 ],
             ],
         ];
