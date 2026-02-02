@@ -3,6 +3,7 @@
 namespace common\models;
 
 use Yii;
+use yii\web\UploadedFile;
 
 /**
  * This is the model class for table "article".
@@ -30,6 +31,11 @@ class Article extends \yii\db\ActiveRecord
     const STATUS_REJECTED = 'rejected';
 
     /**
+     * @var UploadedFile
+     */
+    public $articleFile;
+
+    /**
      * {@inheritdoc}
      */
     public static function tableName()
@@ -45,11 +51,17 @@ class Article extends \yii\db\ActiveRecord
         return [
             [['abstract'], 'default', 'value' => null],
             [['status'], 'default', 'value' => 'submitted'],
-            [['registration_id', 'title', 'file_path'], 'required'],
+            [['registration_id', 'title'], 'required'],
             [['registration_id'], 'integer'],
             [['abstract', 'status'], 'string'],
             [['title'], 'string', 'max' => 255],
             [['file_path'], 'string', 'max' => 512],
+            [['articleFile'], 'file',
+                'skipOnEmpty' => false,
+                'extensions' => 'pdf',
+                'checkExtensionByMimeType' => false,
+                'maxSize' => 1024 * 1024 * 10
+            ],
             ['status', 'in', 'range' => array_keys(self::optsStatus())],
             [['registration_id'], 'exist', 'skipOnError' => true, 'targetClass' => Registration::class, 'targetAttribute' => ['registration_id' => 'id']],
         ];

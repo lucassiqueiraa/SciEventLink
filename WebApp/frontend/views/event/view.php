@@ -3,16 +3,25 @@
 use yii\bootstrap5\BootstrapPluginAsset;
 use yii\helpers\Html;
 use yii\helpers\Url;
+use common\models\Article;
 
-// Regista o JS do Bootstrap 5 para as abas funcionarem
 BootstrapPluginAsset::register($this);
 
 /** @var yii\web\View $this */
 /** @var common\models\Event $model */
+/** @var common\models\Registration|null $userRegistration */
 
 $this->title = $model->name;
 $this->params['breadcrumbs'][] = ['label' => 'Eventos', 'url' => ['site/index']];
 $this->params['breadcrumbs'][] = $this->title;
+
+$hasPaid = false;
+$userArticle = null;
+if ($userRegistration && ($userRegistration->payment_status === 'paid' || $userRegistration->payment_status === 'confirmed')) {
+    $hasPaid = true;
+}
+
+$userArticle = Article::findOne(['registration_id' => $userRegistration->id]);
 ?>
 <div class="event-view">
 
@@ -23,9 +32,46 @@ $this->params['breadcrumbs'][] = $this->title;
                 <i class="far fa-calendar-alt"></i> <?= Yii::$app->formatter->asDate($model->start_date, 'long') ?>
                 até <?= Yii::$app->formatter->asDate($model->end_date, 'long') ?>
             </p>
-            <a href="#bilhetes" class="btn btn-warning btn-lg font-weight-bold">
-                <i class="fas fa-ticket-alt"></i> Garantir Inscrição
-            </a>
+
+            <div class="mt-4">
+                <?php if (!$userRegistration): ?>
+
+                    <a href="#bilhetes" class="btn btn-warning btn-lg font-weight-bold">
+                        <i class="fas fa-ticket-alt"></i> Garantir Inscrição
+                    </a>
+
+                <?php else: ?>
+
+                    <?php if ($userArticle): ?>
+
+                        <?= Html::a('<i class="fas fa-check-circle"></i> Ver Submissão',
+                                ['article/update', 'id' => $userArticle->id],
+                                [
+                                        'class' => 'btn btn-info btn-lg font-weight-bold shadow text-white',
+                                        'title' => 'Clique para ver ou editar o seu artigo'
+                                ]
+                        ) ?>
+                        <div class="mt-2 text-light">
+                            <small><i class="fas fa-info-circle"></i> Estado: <?= Html::encode($userArticle->status) ?></small>
+                        </div>
+
+                    <?php elseif ($hasPaid): ?>
+
+                        <?= Html::a('<i class="fas fa-file-upload"></i> Submeter Artigo',
+                                ['article/create', 'event_id' => $model->id],
+                                ['class' => 'btn btn-success btn-lg font-weight-bold shadow']
+                        ) ?>
+                    <?php else: ?>
+                        <button type="button" class="btn btn-secondary btn-lg" disabled>
+                            <i class="fas fa-lock"></i> Pagamento Pendente
+                        </button>
+                        <small class="d-block mt-2 text-warning">
+                            <i class="fas fa-exclamation-triangle"></i> Regularize o pagamento para submeter artigos.
+                        </small>
+                    <?php endif; ?>
+
+                <?php endif; ?>
+            </div>
         </div>
     </div>
 
@@ -129,12 +175,9 @@ $this->params['breadcrumbs'][] = $this->title;
                                             <div class="mt-auto">
                                                 <?php
                                                 if (Yii::$app->user->isGuest) {
-                                                    // Caso 1: Visitante
                                                     echo Html::a('Login para Comprar', ['site/login'], ['class' => 'btn btn-outline-primary w-100']);
                                                 }
                                                 elseif ($userRegistration) {
-                                                    // Já tem inscrição neste evento
-
                                                     if ($isMyTicket) {
                                                         if ($userRegistration->payment_status === 'paid' || $userRegistration->payment_status === 'confirmed') {
                                                             echo '<button class="btn btn-success w-100 disabled"><i class="fas fa-check-circle"></i> Inscrição Confirmada</button>';
@@ -149,7 +192,6 @@ $this->params['breadcrumbs'][] = $this->title;
                                                     }
                                                 }
                                                 else {
-                                                    // Logado mas sem inscrição (Pode comprar)
                                                     echo Html::a('Inscrever', ['registration/create', 'ticket_type_id' => $ticket->id], [
                                                             'class' => 'btn btn-lg w-100 btn-outline-success',
                                                             'data' => [
@@ -167,6 +209,6 @@ $this->params['breadcrumbs'][] = $this->title;
                         <?php endif; ?>
                     </div>
                 </div>
+            </div>
         </div>
     </div>
-</div>
