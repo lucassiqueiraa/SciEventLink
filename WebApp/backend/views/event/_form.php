@@ -30,7 +30,6 @@ use yii\bootstrap5\Tabs; // Importar o Widget de Abas
                             'label' => 'Locais & Salas',
                             'content' => $this->render('_form_venues', [
                                     'model' => $model,
-                                // Só passamos o dataProvider se ele existir (no create ele é null)
                                     'venuesDataProvider' => $venuesDataProvider ?? null
                             ]),
                     ],
@@ -50,7 +49,14 @@ use yii\bootstrap5\Tabs; // Importar o Widget de Abas
                                     'sessionsDataProvider' => $sessionsDataProvider ?? null
                             ]),
                     ],
-
+                    [
+                            'label' => 'Avaliadores',
+                            'content' => $this->render('_form_evaluators', [
+                                    'event' => $model,
+                                    'evaluatorsProvider' => $evaluatorsProvider,
+                                    'candidatesProvider' => $candidatesProvider,
+                            ]),
+                    ],
             ],
             'navType' => 'nav-tabs',
             'encodeLabels' => false,

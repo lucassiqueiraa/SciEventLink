@@ -34,6 +34,11 @@ $this->params['breadcrumbs'][] = $this->title;
                 ['session/index', 'SessionSearch[event_id]' => $model->id],
                 ['class' => 'btn btn-warning'])
         ?>
+
+        <?= Html::a('<i class="fas fa-user-graduate"></i> Gerir Avaliadores',
+                ['event-evaluator/index', 'event_id' => $model->id],
+                ['class' => 'btn btn-success']
+        ) ?>
     </p>
 
     <?= DetailView::widget([

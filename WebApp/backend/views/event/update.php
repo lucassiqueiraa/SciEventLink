@@ -7,6 +7,8 @@ use yii\helpers\Html;
 /** @var yii\data\ActiveDataProvider $venuesDataProvider */
 /** @var yii\data\ActiveDataProvider $ticketsDataProvider */
 /** @var yii\data\ActiveDataProvider $sessionsDataProvider */
+/** @var yii\data\ActiveDataProvider $evaluatorsProvider */
+/** @var yii\data\ActiveDataProvider $candidatesProvider */
 
 $this->title = 'Update Event: ' . $model->name;
 $this->params['breadcrumbs'][] = ['label' => 'Events', 'url' => ['index']];
@@ -22,6 +24,8 @@ $this->params['breadcrumbs'][] = 'Update';
             'venuesDataProvider' => $venuesDataProvider,
             'ticketsDataProvider' => $ticketsDataProvider,
             'sessionsDataProvider' => $sessionsDataProvider,
+            'evaluatorsProvider' => $evaluatorsProvider,
+            'candidatesProvider' => $candidatesProvider,
 
     ]) ?>
 

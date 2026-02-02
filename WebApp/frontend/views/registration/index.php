@@ -110,7 +110,7 @@ $this->params['breadcrumbs'][] = $this->title;
                                 'ticket' => function ($url, $model) {
                                     if ($model->payment_status === 'paid' || $model->payment_status === 'confirmed') {
                                         return Html::a('<i class="fas fa-file-pdf"></i> Bilhete', ['ticket', 'id' => $model->id], [
-                                                'class' => 'btn btn-sm btn-danger shadow-sm me-1', // Mudei para btn-danger (vermelho) para destacar PDF
+                                                'class' => 'btn btn-sm btn-danger shadow-sm me-1',
                                                 'target' => '_blank',
                                                 'data-pjax' => '0',
                                                 'title' => 'Baixar PDF'

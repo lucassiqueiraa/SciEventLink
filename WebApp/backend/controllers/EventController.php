@@ -3,10 +3,12 @@
 namespace backend\controllers;
 
 use common\models\Event;
+use common\models\EventEvaluators;
 use common\models\EventSearch;
 use common\models\OrganizerEvent;
 use common\models\Session;
 use common\models\TicketType;
+use common\models\User;
 use common\models\Venue;
 use Exception;
 use Yii;
@@ -150,7 +152,23 @@ class EventController extends Controller
 
         $sessionsDataProvider = new ActiveDataProvider([
             'query' => Session::find()->where(['event_id' => $model->id]),
-            'sort' => ['defaultOrder' => ['start_time' => SORT_ASC]], // Ordenar por hora!
+            'sort' => ['defaultOrder' => ['start_time' => SORT_ASC]],
+            'pagination' => ['pageSize' => 10],
+        ]);
+
+        $evaluatorsProvider = new ActiveDataProvider([
+            'query' => EventEvaluators::find()->where(['event_id' => $id]),
+            'pagination' => ['pageSize' => 10],
+        ]);
+
+        $currentEvaluatorsIds = EventEvaluators::find()
+            ->select('user_id')
+            ->where(['event_id' => $id]);
+
+        $candidatesProvider = new ActiveDataProvider([
+            'query' => User::find()
+                ->where(['status' => 10])
+                ->andWhere(['NOT IN', 'id', $currentEvaluatorsIds]),
             'pagination' => ['pageSize' => 10],
         ]);
 
@@ -163,6 +181,9 @@ class EventController extends Controller
             'venuesDataProvider' => $venuesDataProvider,
             'ticketsDataProvider' => $ticketsDataProvider,
             'sessionsDataProvider' => $sessionsDataProvider,
+
+            'evaluatorsProvider' => $evaluatorsProvider,
+            'candidatesProvider' => $candidatesProvider,
         ]);
     }
 
