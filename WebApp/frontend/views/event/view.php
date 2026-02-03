@@ -1,5 +1,6 @@
 <?php
 
+use common\models\EventEvaluators;
 use yii\bootstrap5\BootstrapPluginAsset;
 use yii\helpers\Html;
 use yii\helpers\Url;
@@ -17,11 +18,15 @@ $this->params['breadcrumbs'][] = $this->title;
 
 $hasPaid = false;
 $userArticle = null;
-if ($userRegistration && ($userRegistration->payment_status === 'paid' || $userRegistration->payment_status === 'confirmed')) {
-    $hasPaid = true;
-}
 
-$userArticle = Article::findOne(['registration_id' => $userRegistration->id]);
+$isEvaluator = $model->isEvaluator(Yii::$app->user->id);
+
+if ($userRegistration) {
+    if ($userRegistration->payment_status === 'paid' || $userRegistration->payment_status === 'confirmed') {
+        $hasPaid = true;
+    }
+    $userArticle = Article::findOne(['registration_id' => $userRegistration->id]);
+}
 ?>
 <div class="event-view">
 
@@ -34,6 +39,15 @@ $userArticle = Article::findOne(['registration_id' => $userRegistration->id]);
             </p>
 
             <div class="mt-4">
+                <?php if ($isEvaluator): ?>
+                    <div class="mb-3">
+                        <?= Html::a('<i class="fas fa-gavel"></i> Painel de Avaliação',
+                                ['evaluator/index'],
+                                ['class' => 'btn btn-light text-primary btn-lg font-weight-bold shadow border-primary']
+                        ) ?>
+                        <span class="badge bg-light text-dark ms-2">Você é Avaliador neste evento</span>
+                    </div>
+                <?php endif; ?>
                 <?php if (!$userRegistration): ?>
 
                     <a href="#bilhetes" class="btn btn-warning btn-lg font-weight-bold">

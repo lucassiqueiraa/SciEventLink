@@ -168,6 +168,23 @@ class Event extends \yii\db\ActiveRecord
 
 
     /**
+     * Checks whether a user is a evaluator for this event.
+     * @param int|null $userId
+     * @return bool
+     */
+    public function isEvaluator($userId)
+    {
+        if (!$userId) {
+            return false;
+        }
+
+        return EventEvaluators::find()
+        ->where(['event_id' => $this->id, 'user_id' => $userId])
+            ->exists();
+    }
+
+
+    /**
      * column status ENUM value labels
      * @return string[]
      */
