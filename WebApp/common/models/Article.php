@@ -93,6 +93,25 @@ class Article extends \yii\db\ActiveRecord
     }
 
     /**
+     * Calculate the average of the marks
+     */
+    public function getAverageScore()
+    {
+        $evaluations = $this->evaluations;
+
+        if (empty($evaluations)) {
+            return 0;
+        }
+
+        $totalScore = 0;
+        foreach ($evaluations as $evaluation) {
+            $totalScore += $evaluation->score;
+        }
+
+        return round($totalScore / count($evaluations));
+    }
+
+    /**
      * Gets query for [[Evaluators]].
      *
      * @return \yii\db\ActiveQuery

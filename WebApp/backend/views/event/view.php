@@ -39,6 +39,11 @@ $this->params['breadcrumbs'][] = $this->title;
                 ['event-evaluator/index', 'event_id' => $model->id],
                 ['class' => 'btn btn-success']
         ) ?>
+
+        <?= Html::a('<i class="fas fa-file-alt"></i> Ver Submissões',
+                ['article/index'],
+                ['class' => 'btn btn-info text-white']
+        ) ?>
     </p>
 
     <?= DetailView::widget([
