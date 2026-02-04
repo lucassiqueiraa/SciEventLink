@@ -60,6 +60,7 @@ return [
             'enablePrettyUrl' => true,
             'showScriptName' => false,
             'rules' => [
+                'POST api/login' => 'api/auth/login',
                 'api/checkin/validate' => 'api/checkin/validate',
             ],
         ],
