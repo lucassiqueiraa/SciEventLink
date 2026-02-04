@@ -93,6 +93,16 @@ class Article extends \yii\db\ActiveRecord
     }
 
     /**
+     * Gets query for [[Session]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getSession()
+    {
+        return $this->hasOne(Session::class, ['id' => 'session_id']);
+    }
+
+    /**
      * Calculate the average of the marks
      */
     public function getAverageScore()

@@ -2,9 +2,11 @@
 
 namespace backend\controllers;
 
+use common\models\Session;
 use Yii;
 use common\models\Article;
 use yii\filters\AccessControl;
+use yii\helpers\ArrayHelper;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
@@ -77,8 +79,27 @@ class ArticleController extends Controller
      */
     public function actionView($id)
     {
+        $model = $this->findModel($id);
+
+        $sessions = Session::find()
+            ->where(['event_id' => $model->registration->event_id])
+            ->orderBy(['start_time' => SORT_ASC])
+            ->all();
+
+        $sessionList = ArrayHelper::map($sessions, 'id',
+            function($session) {
+                $start = date('H:i', strtotime($session->start_time));
+                $end   = date('H:i', strtotime($session->end_time));
+                return "$start - $end | {$session->title}";
+            },
+            function($session) {
+                return date('d/m/Y', strtotime($session->start_time));
+            }
+        );
+
         return $this->render('view', [
-            'model' => $this->findModel($id),
+            'model' => $model,
+            'sessionList' => $sessionList,
         ]);
     }
 
@@ -97,6 +118,32 @@ class ArticleController extends Controller
                 Yii::$app->session->setFlash('success', 'Artigo marcado como: ' . strtoupper($status));
             } else {
                 Yii::$app->session->setFlash('error', 'Erro ao gravar.');
+            }
+        }
+
+        return $this->redirect(['view', 'id' => $id]);
+    }
+
+
+    /**
+     * Atribui uma Sessão ao Artigo
+     */
+    public function actionAssignSession($id)
+    {
+        $model = $this->findModel($id);
+
+        if ($this->request->isPost) {
+            $sessionId = $this->request->post('session_id');
+
+            if ($model->status === 'accepted') {
+                $model->session_id = $sessionId;
+                if ($model->save(false)) {
+                    Yii::$app->session->setFlash('success', 'Artigo agendado com sucesso!');
+                } else {
+                    Yii::$app->session->setFlash('error', 'Erro ao agendar.');
+                }
+            } else {
+                Yii::$app->session->setFlash('error', 'Só pode agendar artigos aceites.');
             }
         }
 

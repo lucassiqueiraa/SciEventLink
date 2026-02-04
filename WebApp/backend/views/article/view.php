@@ -103,6 +103,25 @@ $this->params['breadcrumbs'][] = $this->title;
                     <i class="fas fa-check-circle fa-2x d-block mb-2"></i>
                     <h5 class="mb-0">Este artigo foi <strong>ACEITE</strong>.</h5>
                 </div>
+                <div class="card bg-light border-success mb-3 mx-auto" style="max-width: 500px;">
+                    <div class="card-body">
+                        <h6 class="card-title text-success fw-bold"><i class="fas fa-calendar-alt"></i> Agendar Apresentação</h6>
+                        <p class="card-text small text-muted">Escolha em qual sessão este artigo será apresentado.</p>
+
+                        <?= Html::beginForm(['assign-session', 'id' => $model->id], 'post', ['class' => 'd-flex gap-2 justify-content-center']) ?>
+
+                        <?= Html::dropDownList(
+                                'session_id',
+                                $model->session_id,
+                                $sessionList,
+                                ['class' => 'form-select', 'prompt' => '--- Selecione uma Sessão ---']
+                        ) ?>
+
+                        <?= Html::submitButton('Guardar', ['class' => 'btn btn-success']) ?>
+
+                        <?= Html::endForm() ?>
+                    </div>
+                </div>
             <?php elseif ($model->status === 'rejected'): ?>
                 <div class="alert alert-danger d-inline-block mb-4 px-5">
                     <i class="fas fa-times-circle fa-2x d-block mb-2"></i>

@@ -186,15 +186,26 @@ class SessionController extends Controller
      * @return Session the loaded model
      * @throws NotFoundHttpException if the model cannot be found
      */
+    /**
+     * Finds the Session model based on its primary key value.
+     * Checks permissions: Admin OR Event Owner.
+     */
     protected function findModel($id)
     {
         if (($model = Session::findOne(['id' => $id])) !== null) {
-            if (!Yii::$app->user->can('admin') && $model->created_by !== Yii::$app->user->id) {
-                throw new ForbiddenHttpException('Você não tem permissão para aceder a este evento.');
+            $userId = Yii::$app->user->id;
+
+            if (Yii::$app->user->can('admin')) {
+                return $model;
             }
-            return $model;
+
+            if ($model->event && $model->event->created_by == $userId) {
+                return $model;
+            }
+
+            throw new ForbiddenHttpException('Você não tem permissão para gerir sessões deste evento.');
         }
 
-        throw new NotFoundHttpException('The requested page does not exist.');
+        throw new NotFoundHttpException('A sessão solicitada não existe.');
     }
 }

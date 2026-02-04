@@ -145,11 +145,9 @@ class Session extends \yii\db\ActiveRecord
         if ($this->hasErrors()) {
             return;
         }
-        // Procura sessões na MESMA sala que colidam com o horário
-        // Lógica: (StartA < EndB) e (EndA > StartB)
         $conflito = Session::find()
             ->where(['venue_id' => $this->venue_id])
-            ->andWhere(['<>', 'id', $this->id]) // Ignora a própria sessão (se for edição)
+            ->andWhere(['<>', 'id', $this->id])
             ->andWhere(['<', 'start_time', $this->end_time])
             ->andWhere(['>', 'end_time', $this->start_time])
             ->exists();
@@ -167,17 +165,12 @@ class Session extends \yii\db\ActiveRecord
         if (!parent::beforeSave($insert)) {
             return false;
         }
-
-        // START_TIME
         if (!empty($this->start_time)) {
-            // 1. Converte o texto (com 'T') para Timestamp (números)
             $timestamp = strtotime($this->start_time);
 
-            // 2. Converte o Timestamp para o formato MySQL 'AAAA-MM-DD HH:MM:SS'
             $this->start_time = date('Y-m-d H:i:s', $timestamp);
         }
 
-        // END_TIME (Mesma coisa)
         if (!empty($this->end_time)) {
             $timestamp = strtotime($this->end_time);
             $this->end_time = date('Y-m-d H:i:s', $timestamp);
