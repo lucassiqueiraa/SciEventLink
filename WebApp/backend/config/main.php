@@ -63,6 +63,7 @@ return [
                 'POST api/login' => 'api/auth/login',
                 'api/checkin/validate' => 'api/checkin/validate',
                 'GET api/events/<id:\d+>' => 'api/event/view',
+                'GET api/sessions/<id:\d+>' => 'api/session/view',
             ],
         ],
     ],

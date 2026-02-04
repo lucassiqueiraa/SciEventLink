@@ -138,6 +138,14 @@ class Session extends \yii\db\ActiveRecord
     }
 
     /**
+     * Gets query for [[Articles]].
+     */
+    public function getArticles()
+    {
+        return $this->hasMany(Article::class, ['session_id' => 'id']);
+    }
+
+    /**
      * Verifica se a sala já está ocupada nesse horário
      */
     public function validateVenueAvailability($attribute, $params)
