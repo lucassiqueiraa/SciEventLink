@@ -7,11 +7,10 @@ use Yii;
 /**
  * This is the model class for table "user_session_favorite".
  *
+ * @property int $id
  * @property int $user_id
  * @property int $session_id
- *
- * @property Session $session
- * @property User $user
+ * @property string|null $created_at
  */
 class UserSessionFavorite extends \yii\db\ActiveRecord
 {
@@ -33,9 +32,8 @@ class UserSessionFavorite extends \yii\db\ActiveRecord
         return [
             [['user_id', 'session_id'], 'required'],
             [['user_id', 'session_id'], 'integer'],
+            [['created_at'], 'safe'],
             [['user_id', 'session_id'], 'unique', 'targetAttribute' => ['user_id', 'session_id']],
-            [['user_id'], 'exist', 'skipOnError' => true, 'targetClass' => User::class, 'targetAttribute' => ['user_id' => 'id']],
-            [['session_id'], 'exist', 'skipOnError' => true, 'targetClass' => Session::class, 'targetAttribute' => ['session_id' => 'id']],
         ];
     }
 
@@ -45,29 +43,16 @@ class UserSessionFavorite extends \yii\db\ActiveRecord
     public function attributeLabels()
     {
         return [
+            'id' => 'ID',
             'user_id' => 'User ID',
             'session_id' => 'Session ID',
+            'created_at' => 'Created At',
         ];
     }
 
-    /**
-     * Gets query for [[Session]].
-     *
-     * @return \yii\db\ActiveQuery
-     */
     public function getSession()
     {
         return $this->hasOne(Session::class, ['id' => 'session_id']);
-    }
-
-    /**
-     * Gets query for [[User]].
-     *
-     * @return \yii\db\ActiveQuery
-     */
-    public function getUser()
-    {
-        return $this->hasOne(User::class, ['id' => 'user_id']);
     }
 
 }

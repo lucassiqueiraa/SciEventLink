@@ -64,6 +64,10 @@ return [
                 'api/checkin/validate' => 'api/checkin/validate',
                 'GET api/events/<id:\d+>' => 'api/event/view',
                 'GET api/sessions/<id:\d+>' => 'api/session/view',
+
+                'GET api/favorites' => 'api/favorite/index',
+                'POST api/favorites' => 'api/favorite/create',
+                'DELETE api/favorites/<id:\d+>' => 'api/favorite/delete',
             ],
         ],
     ],
