@@ -62,6 +62,8 @@ return [
             'rules' => [
                 'POST api/login' => 'api/auth/login',
                 'api/checkin/validate' => 'api/checkin/validate',
+
+                'GET api/events' => 'api/event/index',
                 'GET api/events/<id:\d+>' => 'api/event/view',
                 'GET api/sessions/<id:\d+>' => 'api/session/view',
 
