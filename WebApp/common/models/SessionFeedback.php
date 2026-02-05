@@ -3,6 +3,8 @@
 namespace common\models;
 
 use Yii;
+use yii\behaviors\TimestampBehavior;
+use yii\db\Expression;
 
 /**
  * This is the model class for table "session_feedback".
@@ -29,6 +31,17 @@ class SessionFeedback extends \yii\db\ActiveRecord
         return 'session_feedback';
     }
 
+    public function behaviors()
+    {
+        return [
+            [
+                'class' => TimestampBehavior::class,
+                'updatedAtAttribute' => false,
+                'value' => new Expression('NOW()'),
+            ],
+        ];
+    }
+
     /**
      * {@inheritdoc}
      */
@@ -39,6 +52,7 @@ class SessionFeedback extends \yii\db\ActiveRecord
             [['session_id', 'user_id', 'rating'], 'required'],
             [['session_id', 'user_id', 'rating'], 'integer'],
             [['comment'], 'string'],
+            ['rating', 'in', 'range' => [1, 2, 3, 4, 5], 'message' => 'A nota deve ser entre 1 e 5.'],
             [['created_at'], 'safe'],
             [['session_id', 'user_id'], 'unique', 'targetAttribute' => ['session_id', 'user_id']],
             [['session_id'], 'exist', 'skipOnError' => true, 'targetClass' => Session::class, 'targetAttribute' => ['session_id' => 'id']],

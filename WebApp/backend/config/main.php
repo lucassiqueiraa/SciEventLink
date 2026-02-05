@@ -68,6 +68,8 @@ return [
                 'GET api/favorites' => 'api/favorite/index',
                 'POST api/favorites' => 'api/favorite/create',
                 'DELETE api/favorites/<id:\d+>' => 'api/favorite/delete',
+
+                'POST api/feedback' => 'api/feedback/create',
             ],
         ],
     ],
