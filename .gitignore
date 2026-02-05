@@ -58,10 +58,15 @@ WebApp/codeception.yml
 # =======================
 # MOBILE APP (Android)
 # =======================
-# (Preparado para quando criares a pasta mobile)
-mobile/.gradle/
-mobile/local.properties
-mobile/.idea/
-mobile/build/
-mobile/app/build/
-*.iml
+MobileApp/.gradle
+MobileApp/local.properties
+MobileApp/.idea/caches
+MobileApp/.idea/libraries
+MobileApp/.idea/modules.xml
+MobileApp/.idea/workspace.xml
+MobileApp/.idea/navEditor.xml
+MobileApp/.idea/assetWizardSettings.xml
+MobileApp/build
+MobileApp/app/build
+MobileApp/*.iml
+MobileApp/app/*.iml
