@@ -3,6 +3,10 @@
 namespace common\models;
 
 use Yii;
+use yii\behaviors\TimestampBehavior;
+use yii\db\ActiveQuery;
+use yii\db\ActiveRecord;
+use yii\db\Expression;
 
 /**
  * This is the model class for table "session_question".
@@ -17,7 +21,7 @@ use Yii;
  * @property Session $session
  * @property User $user
  */
-class SessionQuestion extends \yii\db\ActiveRecord
+class SessionQuestion extends ActiveRecord
 {
 
     /**
@@ -33,6 +37,17 @@ class SessionQuestion extends \yii\db\ActiveRecord
     public static function tableName()
     {
         return 'session_question';
+    }
+
+    public function behaviors()
+    {
+        return [
+            [
+                'class' => TimestampBehavior::class,
+                'updatedAtAttribute' => false,
+                'value' => new Expression('NOW()'),
+            ],
+        ];
     }
 
     /**
@@ -70,7 +85,7 @@ class SessionQuestion extends \yii\db\ActiveRecord
     /**
      * Gets query for [[Session]].
      *
-     * @return \yii\db\ActiveQuery
+     * @return ActiveQuery
      */
     public function getSession()
     {
@@ -80,7 +95,7 @@ class SessionQuestion extends \yii\db\ActiveRecord
     /**
      * Gets query for [[User]].
      *
-     * @return \yii\db\ActiveQuery
+     * @return ActiveQuery
      */
     public function getUser()
     {
