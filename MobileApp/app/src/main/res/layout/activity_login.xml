@@ -16,7 +16,7 @@
         android:layout_height="202dp"
         android:layout_marginBottom="24dp"
         android:contentDescription="Logótipo da Aplicação"
-        android:src="@drawable/sciEventLink_logoApp" />
+        android:src="@drawable/scieventlink_logo" />
 
     <TextView
         android:layout_width="wrap_content"

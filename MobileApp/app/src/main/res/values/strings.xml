@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">SciEventLinkApp</string>
+    <string name="txt_eventos_disponiveis">Eventos Disponíveis</string>
 </resources>
