@@ -27,7 +27,6 @@ public class SingletonManager {
     private static SingletonManager instance = null;
     private static RequestQueue volleyQueue = null;
 
-    // Configuração da API
     private static final String BASE_URL = "http://172.22.21.248/scieventlink/WebApp/backend/web/api";
 
     // Dados Locais (SharedPreferences)
@@ -111,6 +110,7 @@ public class SingletonManager {
                     }
                 }
         );
+
         volleyQueue.add(request);
     }
 
@@ -159,9 +159,84 @@ public class SingletonManager {
         volleyQueue.add(request);
     }
 
+    public void getEventDetails(int eventId, final EventDetailsListener listener) {
+        String url = BASE_URL + "/events/" + eventId; // Ex: .../api/events/1
+
+        JsonObjectRequest request = new JsonObjectRequest(
+                Request.Method.GET,
+                url,
+                null,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        // 1. Parse do Evento Principal
+                        // Precisamos criar um método auxiliar no parser ou fazer aqui à mão.
+                        // Como já tens o EventJsonParser, o ideal seria atualizá-lo,
+                        // mas para ser rápido, vamos fazer o parse aqui mesmo:
+                        try {
+                            int id = response.getInt("id");
+                            String name = response.getString("name");
+                            String description = response.optString("description", "");
+                            String start = response.getString("start_date");
+                            String end = response.getString("end_date");
+                            String status = response.getString("status");
+
+                            Event event = new Event(id, name, description, start, end, status);
+
+                            // 2. Parse das Sessões (que vêm dentro do JSON do evento)
+                            ArrayList<Session> sessionsList = new ArrayList<>();
+                            if (response.has("sessions")) {
+                                JSONArray sessionsArray = response.getJSONArray("sessions");
+                                for (int i = 0; i < sessionsArray.length(); i++) {
+                                    JSONObject s = sessionsArray.getJSONObject(i);
+                                    Session session = new Session(
+                                            s.getInt("id"),
+                                            s.getString("title"),
+                                            s.getString("start_time"),
+                                            s.getString("end_time"),
+                                            s.optString("location", "TBA"),
+                                            s.optInt("capacity", 0)
+                                    );
+                                    sessionsList.add(session);
+                                }
+                            }
+                            // Guardamos as sessões dentro do evento
+                            event.setSessions(sessionsList);
+
+                            if (listener != null) listener.onEventDetailsLoaded(event);
+
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            if (listener != null) listener.onError("Erro ao processar dados: " + e.getMessage());
+                        }
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        if (listener != null) listener.onError("Erro API: " + error.getMessage());
+                    }
+                }
+        ) {
+            @Override
+            public Map<String, String> getHeaders() {
+                Map<String, String> headers = new HashMap<>();
+                String token = getAccessToken();
+                if (token != null) headers.put("Authorization", "Bearer " + token);
+                return headers;
+            }
+        };
+        volleyQueue.add(request);
+    }
+
     public interface EventsListener {
         void onEventsLoaded(ArrayList<Event> events);
         void onEventsError(String message);
+    }
+
+    public interface EventDetailsListener {
+        void onEventDetailsLoaded(Event event);
+        void onError(String message);
     }
 
 }

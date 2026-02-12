@@ -16,6 +16,11 @@
         android:theme="@style/Theme.SciEventLinkApp"
         android:usesCleartextTraffic="true">
         <activity
+            android:name=".EventDetailsActivity"
+            android:exported="false"
+            android:parentActivityName=".MainActivity">
+        </activity>
+        <activity
             android:name=".LoginActivity"
             android:exported="true">
             <intent-filter>
@@ -24,6 +29,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
         <activity android:name=".MainActivity" />
     </application>
 

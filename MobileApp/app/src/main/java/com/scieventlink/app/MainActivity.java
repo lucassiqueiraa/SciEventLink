@@ -39,7 +39,9 @@ public class MainActivity extends AppCompatActivity {
         adapter.setOnItemClickListener(new EventAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(Event event) {
-                Toast.makeText(MainActivity.this, "Clicou em: " + event.getName(), Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(MainActivity.this, EventDetailsActivity.class);
+                intent.putExtra("event_id", event.getId());
+                startActivity(intent);
             }
         });
     }
