@@ -1,7 +1,6 @@
 package com.scieventlink.app;
 
 import android.os.Bundle;
-import android.util.Log;
 import android.view.MenuItem;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -42,7 +41,6 @@ public class EventDetailsActivity extends AppCompatActivity {
         }
 
         eventId = getIntent().getIntExtra("event_id", -1);
-
         if (eventId == -1) {
             Toast.makeText(this, "Erro: Evento inválido", Toast.LENGTH_SHORT).show();
             finish();
@@ -65,7 +63,8 @@ public class EventDetailsActivity extends AppCompatActivity {
                     @Override
                     public void onFavoriteChanged(int sessionId, boolean isFavorite) {
                         adapter.notifyItemChanged(position);
-                        String msg = isFavorite ? "Sessão favoritada!" : "Removida dos favoritos.";
+
+                        String msg = isFavorite ? "Adicionado aos favoritos!" : "Removido dos favoritos.";
                         Toast.makeText(EventDetailsActivity.this, msg, Toast.LENGTH_SHORT).show();
                     }
 
@@ -75,59 +74,35 @@ public class EventDetailsActivity extends AppCompatActivity {
                     @Override
                     public void onError(String message) {
                         Toast.makeText(EventDetailsActivity.this, "Erro: " + message, Toast.LENGTH_SHORT).show();
+                        adapter.notifyItemChanged(position);
                     }
                 });
             }
         });
 
-        carregarDadosCompletos();
+        carregarDetalhes();
     }
 
-    private void carregarDadosCompletos() {
-        SingletonManager singleton = SingletonManager.getInstance(this);
-
-        singleton.getFavorites(new FavoriteListener() {
+    private void carregarDetalhes() {
+        SingletonManager.getInstance(this).getEventDetails(eventId, new SingletonManager.EventDetailsListener() {
             @Override
-            public void onFavoritesLoaded(ArrayList<Session> favoriteSessions) {
-                singleton.getEventDetails(eventId, new SingletonManager.EventDetailsListener() {
-                    @Override
-                    public void onEventDetailsLoaded(Event event) {
-                        // O SEGREDO ESTÁ AQUI: Cruzar antes de dar o updateSessions
-                        cruzarDadosSessoes(event.getSessions(), favoriteSessions);
+            public void onEventDetailsLoaded(Event event) {
+                tvName.setText(event.getName());
+                tvDate.setText("De " + event.getStartDate() + " até " + event.getEndDate());
+                tvDesc.setText(event.getDescription());
 
-                        tvName.setText(event.getName());
-                        tvDate.setText("De " + event.getStartDate() + " até " + event.getEndDate());
-                        tvDesc.setText(event.getDescription());
-                        adapter.updateSessions(event.getSessions()); // UI atualiza com as estrelas marcadas
-                    }
-                    @Override public void onError(String message) { /* ... */ }
-                });
-            }
-            @Override public void onFavoriteChanged(int s, boolean i) {}
-            @Override public void onError(String m) {
-                // Se favoritos falhar, carrega o evento puro
-                singleton.getEventDetails(eventId, new SingletonManager.EventDetailsListener() {
-                    @Override public void onEventDetailsLoaded(Event e) { adapter.updateSessions(e.getSessions()); }
-                    @Override public void onError(String m2) {}
-                });
-            }
-        });
-    }
-
-    private void cruzarDadosSessoes(ArrayList<Session> sessoesEvento, ArrayList<Session> favoritosApi) {
-        for (Session s : sessoesEvento) {
-            s.setFavorite(false);
-            s.setFavoriteId(-1);
-
-            for (Session fav : favoritosApi) {
-                // Compara o "id" do JSON de Eventos com o "session_id" do JSON de Favoritos
-                if (s.getId() == fav.getId()) {
-                    s.setFavorite(true);
-                    s.setFavoriteId(fav.getFavoriteId()); // Garante que temos o ID para o clique
-                    break;
+                if (event.getSessions() != null && !event.getSessions().isEmpty()) {
+                    adapter.updateSessions(event.getSessions());
+                } else {
+                    Toast.makeText(EventDetailsActivity.this, "Sem sessões agendadas.", Toast.LENGTH_SHORT).show();
                 }
             }
-        }
+
+            @Override
+            public void onError(String message) {
+                Toast.makeText(EventDetailsActivity.this, "Erro ao carregar: " + message, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     @Override

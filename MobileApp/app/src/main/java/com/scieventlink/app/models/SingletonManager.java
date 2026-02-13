@@ -17,6 +17,7 @@ import com.android.volley.toolbox.Volley;
 import com.scieventlink.app.listeners.FavoriteListener;
 import com.scieventlink.app.listeners.LoginListener;
 import com.scieventlink.app.utils.EventJsonParser;
+import com.scieventlink.app.utils.FavoritesJsonParser;
 import com.scieventlink.app.utils.LoginJsonParser;
 
 import org.json.JSONArray;
@@ -148,19 +149,18 @@ public class SingletonManager {
 
     public void getEventDetails(int eventId, final EventDetailsListener listener) {
         String url = BASE_URL + "/events/" + eventId;
+
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
                 response -> {
-                    try {
-                        Event event = parseEventWithSessions(response);
-                        if (listener != null) listener.onEventDetailsLoaded(event);
-                    } catch (Exception e) {
-                        if (listener != null) listener.onError("Erro no parse: " + e.getMessage());
+                    Event event = EventJsonParser.parserEventDetails(response.toString());
+
+                    if (event != null) {
+                        listener.onEventDetailsLoaded(event);
+                    } else {
+                        listener.onError("Erro ao processar dados do evento.");
                     }
                 },
-                error -> {
-                    if (listener != null) listener.onError(handleVolleyError(error));
-                }
-        ) {
+                error -> listener.onError(handleVolleyError(error))) {
             @Override public Map<String, String> getHeaders() { return getAuthHeaders(); }
         };
         applyRetryPolicy(request);
@@ -173,22 +173,10 @@ public class SingletonManager {
         String url = BASE_URL + "/favorites";
         JsonArrayRequest request = new JsonArrayRequest(Request.Method.GET, url, null,
                 response -> {
-                    ArrayList<Session> favorites = new ArrayList<>();
-                    try {
-                        for (int i = 0; i < response.length(); i++) {
-                            JSONObject obj = response.getJSONObject(i);
-                            // Como seu JSON não tem o ID do registro (vimos no print),
-                            // usamos o session_id para identificar e para apagar.
-                            int sId = obj.getInt("session_id");
-
-                            Session s = new Session(sId, obj.optString("title"), "", "", "", 0);
-                            s.setFavorite(true);
-                            s.setFavoriteId(sId); // Se a sua API permitir DELETE /favorites/{session_id}
-                            favorites.add(s);
-                        }
-                        listener.onFavoritesLoaded(favorites);
-                    } catch (JSONException e) { listener.onError("Erro parse favoritos"); }
-                }, error -> listener.onError(error.toString())
+                    ArrayList<Session> favorites = FavoritesJsonParser.parserFavorites(response.toString());
+                    listener.onFavoritesLoaded(favorites);
+                },
+                error -> listener.onError(handleVolleyError(error))
         ) {
             @Override public Map<String, String> getHeaders() { return getAuthHeaders(); }
         };
@@ -203,32 +191,20 @@ public class SingletonManager {
     private void addFavorite(Session session, final FavoriteListener listener) {
         String url = BASE_URL + "/favorites";
         JSONObject body = new JSONObject();
-        try {
-            body.put("session_id", session.getId());
-        } catch (JSONException e) { e.printStackTrace(); }
+        try { body.put("session_id", session.getId()); } catch (JSONException e) { e.printStackTrace(); }
 
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, body,
                 response -> {
-                    try {
-                        int newId = -1;
-                        if (response.has("id")) newId = response.getInt("id");
-                        else if (response.has("id_favorito")) newId = response.getInt("id_favorito");
+                    int newId = FavoritesJsonParser.parserAddFavoriteResponse(response.toString());
 
-                        session.setFavorite(true);
-                        if (newId != -1) session.setFavoriteId(newId);
+                    session.setFavorite(true);
+                    if (newId != -1) session.setFavoriteId(newId);
 
-                        if (listener != null) listener.onFavoriteChanged(session.getId(), true);
-                    } catch (JSONException e) {
-                        session.setFavorite(true);
-                        if (listener != null) listener.onFavoriteChanged(session.getId(), true);
-                    }
+                    if (listener != null) listener.onFavoriteChanged(session.getId(), true);
                 },
                 error -> {
                     if (error.networkResponse != null && error.networkResponse.statusCode == 500) {
-                        Log.w("Singleton", "Erro 500 ignorado: assumindo sucesso.");
-
                         session.setFavorite(true);
-
                         if (listener != null) listener.onFavoriteChanged(session.getId(), true);
                     } else {
                         if (listener != null) listener.onError(handleVolleyError(error));
@@ -242,59 +218,22 @@ public class SingletonManager {
     }
 
     private void removeFavorite(Session session, final FavoriteListener listener) {
-        int idToDelete = session.getFavoriteId();
-        if (idToDelete <= 0) {
-            listener.onError("Erro: ID do favorito não sincronizado.");
-            return;
-        }
-        String url = BASE_URL + "/favorites/" + idToDelete;
+        String url = BASE_URL + "/favorites/" + session.getId();
+
         StringRequest request = new StringRequest(Request.Method.DELETE, url,
                 response -> {
                     session.setFavorite(false);
-                    session.setFavoriteId(-1);
-                    listener.onFavoriteChanged(session.getId(), false);
-                }, error -> listener.onError(error.toString())) {
+                    if (listener != null) listener.onFavoriteChanged(session.getId(), false);
+                },
+                error -> {
+                    if (listener != null) listener.onError(handleVolleyError(error));
+                }) {
             @Override public Map<String, String> getHeaders() { return getAuthHeaders(); }
         };
         applyRetryPolicy(request);
         volleyQueue.add(request);
     }
 
-    // --- AUXILIARES DE PARSE E ERRO ---
-
-    private Event parseEventWithSessions(JSONObject response) throws JSONException {
-        Event event = new Event(
-                response.getInt("id"),
-                response.getString("name"),
-                response.optString("description", ""),
-                response.getString("start_date"),
-                response.getString("end_date"),
-                response.getString("status")
-        );
-        ArrayList<Session> sessions = new ArrayList<>();
-        if (response.has("sessions")) {
-            JSONArray arr = response.getJSONArray("sessions");
-            for (int i = 0; i < arr.length(); i++) {
-                sessions.add(parseSession(arr.getJSONObject(i)));
-            }
-        }
-        event.setSessions(sessions);
-        return event;
-    }
-
-    private Session parseSession(JSONObject s) throws JSONException {
-        Session session = new Session(
-                s.getInt("id"),
-                s.getString("title"),
-                s.getString("start_time"),
-                s.getString("end_time"),
-                s.optString("location", "TBA"),
-                s.optInt("capacity", 0)
-        );
-        // Se a API retornar is_favorite diretamente no detalhe do evento, fazemos o set aqui:
-        session.setFavorite(s.optBoolean("is_favorite", false));
-        return session;
-    }
 
     private String handleVolleyError(VolleyError error) {
         if (error.networkResponse != null) {
