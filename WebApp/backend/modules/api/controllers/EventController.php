@@ -6,46 +6,30 @@ use Yii;
 use yii\rest\Controller;
 use yii\web\Response;
 use common\models\Event;
-use yii\filters\auth\HttpBearerAuth; // <--- Importante para bloquear acesso sem token
+use common\models\UserSessionFavorite; // <--- IMPORTANTE: Importar o modelo de favoritos
+use yii\filters\auth\HttpBearerAuth;
 
 class EventController extends Controller
 {
-    /**
-     * Configurações de Comportamento (Behaviors)
-     */
     public function behaviors()
     {
         $behaviors = parent::behaviors();
-
-        // Define que a resposta é sempre JSON
         $behaviors['contentNegotiator']['formats']['application/json'] = Response::FORMAT_JSON;
-
-        // Adiciona Autenticação por Token (Bearer Token)
-        // Se a App não enviar o token no header, dá erro 401
         $behaviors['authenticator'] = [
             'class' => HttpBearerAuth::class,
         ];
-
         return $behaviors;
     }
 
-    /**
-     * GET /api/events
-     * Lista todos os eventos (ou apenas os abertos/running)
-     */
     public function actionIndex()
     {
-        // Podes filtrar apenas eventos "open" ou "running" se quiseres
-        $events = Event::find()
+        return Event::find()
             ->select(['id', 'name', 'start_date', 'end_date', 'status', 'description'])
             ->all();
-
-        return $events;
     }
 
     /**
      * GET /api/events/{id}
-     * Detalhes de um evento + Sessões + Salas
      */
     public function actionView($id)
     {
@@ -54,20 +38,29 @@ class EventController extends Controller
         if (!$event) {
             throw new \yii\web\NotFoundHttpException("Evento não encontrado.");
         }
-        $sessionsData = [];
 
+        $userId = Yii::$app->user->id;
+
+        $myFavoriteSessionIds = UserSessionFavorite::find()
+            ->select('session_id')
+            ->where(['user_id' => $userId])
+            ->column();
+
+        $sessionsData = [];
         $sessions = $event->getSessions()->orderBy(['start_time' => SORT_ASC])->all();
 
         foreach ($sessions as $session) {
+
+            $isFav = in_array($session->id, $myFavoriteSessionIds);
+
             $sessionsData[] = [
                 'id' => $session->id,
                 'title' => $session->title,
                 'start_time' => $session->start_time,
                 'end_time' => $session->end_time,
-
                 'location' => $session->venue ? $session->venue->name : 'Local a definir',
-
                 'capacity' => $session->venue ? $session->venue->capacity : null,
+                'is_favorite' => $isFav
             ];
         }
 

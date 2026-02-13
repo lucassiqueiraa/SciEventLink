@@ -16,7 +16,6 @@ class FavoriteController extends Controller
     {
         $behaviors = parent::behaviors();
         $behaviors['contentNegotiator']['formats']['application/json'] = Response::FORMAT_JSON;
-
         $behaviors['authenticator'] = [
             'class' => HttpBearerAuth::class,
         ];
@@ -25,12 +24,11 @@ class FavoriteController extends Controller
 
     /**
      * GET /api/favorites
-     * Lista todas as sessões favoritas do utilizador logado
+     * Lista apenas as favoritas (para a tela "Minha Agenda")
      */
     public function actionIndex()
     {
         $userId = Yii::$app->user->id;
-
         $favorites = UserSessionFavorite::find()
             ->where(['user_id' => $userId])
             ->with('session')
@@ -44,35 +42,28 @@ class FavoriteController extends Controller
                     'title' => $fav->session->title,
                     'start_time' => $fav->session->start_time,
                     'location' => $fav->session->venue ? $fav->session->venue->name : 'N/A',
+                    'is_favorite' => true // Redundante aqui, mas não faz mal
                 ];
             }
         }
-
         return $result;
     }
 
     /**
      * POST /api/favorites
-     * Adiciona uma sessão aos favoritos
-     * Body JSON: { "session_id": 7 }
+     * Body: { "session_id": 5 }
      */
     public function actionCreate()
     {
         $userId = Yii::$app->user->id;
         $sessionId = Yii::$app->request->post('session_id');
 
-        if (!$sessionId) {
-            Yii::$app->response->statusCode = 400;
-            return ['message' => 'O campo session_id é obrigatório.'];
-        }
+        if (!$sessionId) return ['message' => 'session_id obrigatorio.'];
 
-        if (!Session::findOne($sessionId)) {
-            throw new NotFoundHttpException("Sessão não encontrada.");
-        }
+        if (!Session::findOne($sessionId)) throw new NotFoundHttpException("Sessão não encontrada.");
 
-        $exists = UserSessionFavorite::findOne(['user_id' => $userId, 'session_id' => $sessionId]);
-        if ($exists) {
-            return ['message' => 'Esta sessão já está nos teus favoritos.'];
+        if (UserSessionFavorite::findOne(['user_id' => $userId, 'session_id' => $sessionId])) {
+            return ['message' => 'Sessão favoritada.', 'session_id' => (int)$sessionId];
         }
 
         $model = new UserSessionFavorite();
@@ -80,33 +71,24 @@ class FavoriteController extends Controller
         $model->session_id = $sessionId;
 
         if ($model->save()) {
-            return [
-                'message' => 'Adicionado aos favoritos!',
-                'id' => $model->id
-            ];
+            return ['message' => 'Sessão favoritada.', 'session_id' => (int)$sessionId];
         }
 
         Yii::$app->response->statusCode = 500;
-        return ['message' => 'Erro ao salvar', 'errors' => $model->errors];
+        return ['message' => 'Erro ao salvar.'];
     }
 
     /**
      * DELETE /api/favorites/{session_id}
-     * Remove uma sessão dos favoritos
-     * NOTA: O ID na URL é o ID da SESSÃO, não do favorito. É mais fácil para a App.
+     * Deleta pelo ID da SESSÃO.
      */
     public function actionDelete($id)
     {
         $userId = Yii::$app->user->id;
-        $sessionId = $id;
+        $model = UserSessionFavorite::findOne(['user_id' => $userId, 'session_id' => $id]);
 
-        $model = UserSessionFavorite::findOne(['user_id' => $userId, 'session_id' => $sessionId]);
+        if ($model) $model->delete();
 
-        if (!$model) {
-            throw new NotFoundHttpException("Esta sessão não está nos teus favoritos.");
-        }
-
-        $model->delete();
-        return ['message' => 'Removido dos favoritos.'];
+        return ['message' => 'Removido dos favoritos.', 'session_id' => (int)$id];
     }
 }
