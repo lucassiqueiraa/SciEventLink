@@ -4,23 +4,29 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
 
+import com.android.volley.AuthFailureError;
+import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
-import com.android.volley.toolbox.JsonArrayRequest; // NOVO
+import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.scieventlink.app.listeners.FavoriteListener;
 import com.scieventlink.app.listeners.LoginListener;
-import com.scieventlink.app.utils.EventJsonParser; // NOVO
+import com.scieventlink.app.utils.EventJsonParser;
+import com.scieventlink.app.utils.FavoritesJsonParser;
 import com.scieventlink.app.utils.LoginJsonParser;
 
-import org.json.JSONArray; // NOVO
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.ArrayList; // NOVO
-import java.util.HashMap;   // NOVO
-import java.util.Map;       // NOVO
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class SingletonManager {
 
@@ -29,17 +35,21 @@ public class SingletonManager {
 
     private static final String BASE_URL = "http://172.22.21.248/scieventlink/WebApp/backend/web/api";
 
-    // Dados Locais (SharedPreferences)
     private static final String PREF_NAME = "SciEventLinkPrefs";
     private static final String KEY_TOKEN = "auth_token";
     private static final String KEY_USERNAME = "username";
+    private static final String KEY_USER_ID = "user_id";
 
-    private LoginListener loginListener;
+
     private Context context;
+    private LoginListener loginListener;
+
+    // Timeout de 10 segundos para a VPN do IPLeiria
+    private static final int TIMEOUT_MS = 10000;
 
     private SingletonManager(Context context) {
-        this.context = context;
-        volleyQueue = Volley.newRequestQueue(context);
+        this.context = context.getApplicationContext();
+        volleyQueue = Volley.newRequestQueue(this.context);
     }
 
     public static synchronized SingletonManager getInstance(Context context) {
@@ -49,184 +59,191 @@ public class SingletonManager {
         return instance;
     }
 
-    // --- MÉTODOS AUXILIARES ---
+    // --- GESTÃO DE TOKEN ---
 
     public String getAccessToken() {
         SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
         return prefs.getString(KEY_TOKEN, null);
     }
 
+    // --- MÉTODOS GENÉRICOS (BOAS PRÁTICAS) ---
+
+    private Map<String, String> getAuthHeaders() {
+        Map<String, String> headers = new HashMap<>();
+        String token = getAccessToken();
+        if (token != null) {
+            headers.put("Authorization", "Bearer " + token);
+        }
+        return headers;
+    }
+
+    private void applyRetryPolicy(Request<?> request) {
+        request.setRetryPolicy(new DefaultRetryPolicy(
+                TIMEOUT_MS,
+                DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
+                DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+    }
+
+    // --- LOGIN ---
+
     public void setLoginListener(LoginListener listener) {
         this.loginListener = listener;
     }
 
-    public void loginAPI(final String username, final String password, final Context context) {
+    public void loginAPI(final String username, final String password, final Context ctx) {
         String url = BASE_URL + "/auth/login";
-
         JSONObject jsonBody = new JSONObject();
         try {
             jsonBody.put("username", username);
             jsonBody.put("password", password);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        } catch (JSONException e) { e.printStackTrace(); }
 
-        Log.d("API_LOGIN", "Tentando login em: " + url);
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, jsonBody,
+                response -> {
+                    String token = LoginJsonParser.parserJsonLogin(response.toString());
 
-        JsonObjectRequest request = new JsonObjectRequest(
-                Request.Method.POST,
-                url,
-                jsonBody,
-                new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        Log.d("API_LOGIN", "Resposta: " + response.toString());
-                        String token = LoginJsonParser.parserJsonLogin(response.toString());
+                    if (token != null) {
+                        int userId = response.optInt("user_id", -1);
+                        saveUserData(token, username, userId);
 
-                        if (token != null) {
-                            SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-                            SharedPreferences.Editor editor = prefs.edit();
-                            editor.putString(KEY_TOKEN, token);
-                            editor.putString(KEY_USERNAME, username);
-                            editor.apply();
-
-                            if (loginListener != null) {
-                                loginListener.onValidateLogin(token, username, context);
-                            }
-                        } else {
-                            if (loginListener != null) loginListener.onLoginError("Erro: Token não encontrado.");
-                        }
+                        if (loginListener != null) loginListener.onValidateLogin(token, username, ctx);
+                    } else {
+                        if (loginListener != null) loginListener.onLoginError("Credenciais inválidas ou Token não encontrado.");
                     }
                 },
-                new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        String msg = "Erro de conexão";
-                        if (error.networkResponse != null) {
-                            if (error.networkResponse.statusCode == 401) msg = "Credenciais inválidas.";
-                            else if (error.networkResponse.statusCode == 404) msg = "Servidor não encontrado.";
-                        }
-                        if (loginListener != null) loginListener.onLoginError(msg);
-                    }
+                error -> {
+                    if (loginListener != null) loginListener.onLoginError(handleVolleyError(error));
                 }
         );
-
+        applyRetryPolicy(request);
         volleyQueue.add(request);
     }
 
+    private void saveUserData(String token, String username, int userId) {
+        SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        prefs.edit()
+                .putString(KEY_TOKEN, token)
+                .putString(KEY_USERNAME, username)
+                .putInt(KEY_USER_ID, userId)
+                .apply();
+    }
+
+    // --- EVENTOS ---
 
     public void getAllEvents(final EventsListener listener) {
         String url = BASE_URL + "/events";
-
-        JsonArrayRequest request = new JsonArrayRequest(
-                Request.Method.GET,
-                url,
-                null,
-                new Response.Listener<JSONArray>() {
-                    @Override
-                    public void onResponse(JSONArray response) {
-                        ArrayList<Event> events = EventJsonParser.parserJsonEvents(response.toString());
-
-                        if (listener != null) {
-                            listener.onEventsLoaded(events);
-                        }
-                    }
+        JsonArrayRequest request = new JsonArrayRequest(Request.Method.GET, url, null,
+                response -> {
+                    ArrayList<Event> events = EventJsonParser.parserJsonEvents(response.toString());
+                    if (listener != null) listener.onEventsLoaded(events);
                 },
-                new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        String errorMsg = "Erro ao carregar eventos.";
-                        if (error.networkResponse != null) {
-                            errorMsg += " (Código: " + error.networkResponse.statusCode + ")";
-                        }
-                        if (listener != null) {
-                            listener.onEventsError(errorMsg);
-                        }
-                    }
+                error -> {
+                    if (listener != null) listener.onEventsError(handleVolleyError(error));
                 }
         ) {
-            @Override
-            public Map<String, String> getHeaders() {
-                Map<String, String> headers = new HashMap<>();
-                String token = getAccessToken();
-                if (token != null) {
-                    headers.put("Authorization", "Bearer " + token);
-                }
-                return headers;
-            }
+            @Override public Map<String, String> getHeaders() { return getAuthHeaders(); }
         };
-
+        applyRetryPolicy(request);
         volleyQueue.add(request);
     }
 
     public void getEventDetails(int eventId, final EventDetailsListener listener) {
-        String url = BASE_URL + "/events/" + eventId; // Ex: .../api/events/1
+        String url = BASE_URL + "/events/" + eventId;
 
-        JsonObjectRequest request = new JsonObjectRequest(
-                Request.Method.GET,
-                url,
-                null,
-                new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        // 1. Parse do Evento Principal
-                        // Precisamos criar um método auxiliar no parser ou fazer aqui à mão.
-                        // Como já tens o EventJsonParser, o ideal seria atualizá-lo,
-                        // mas para ser rápido, vamos fazer o parse aqui mesmo:
-                        try {
-                            int id = response.getInt("id");
-                            String name = response.getString("name");
-                            String description = response.optString("description", "");
-                            String start = response.getString("start_date");
-                            String end = response.getString("end_date");
-                            String status = response.getString("status");
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
+                response -> {
+                    Event event = EventJsonParser.parserEventDetails(response.toString());
 
-                            Event event = new Event(id, name, description, start, end, status);
-
-                            // 2. Parse das Sessões (que vêm dentro do JSON do evento)
-                            ArrayList<Session> sessionsList = new ArrayList<>();
-                            if (response.has("sessions")) {
-                                JSONArray sessionsArray = response.getJSONArray("sessions");
-                                for (int i = 0; i < sessionsArray.length(); i++) {
-                                    JSONObject s = sessionsArray.getJSONObject(i);
-                                    Session session = new Session(
-                                            s.getInt("id"),
-                                            s.getString("title"),
-                                            s.getString("start_time"),
-                                            s.getString("end_time"),
-                                            s.optString("location", "TBA"),
-                                            s.optInt("capacity", 0)
-                                    );
-                                    sessionsList.add(session);
-                                }
-                            }
-                            // Guardamos as sessões dentro do evento
-                            event.setSessions(sessionsList);
-
-                            if (listener != null) listener.onEventDetailsLoaded(event);
-
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            if (listener != null) listener.onError("Erro ao processar dados: " + e.getMessage());
-                        }
+                    if (event != null) {
+                        listener.onEventDetailsLoaded(event);
+                    } else {
+                        listener.onError("Erro ao processar dados do evento.");
                     }
                 },
-                new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        if (listener != null) listener.onError("Erro API: " + error.getMessage());
+                error -> listener.onError(handleVolleyError(error))) {
+            @Override public Map<String, String> getHeaders() { return getAuthHeaders(); }
+        };
+        applyRetryPolicy(request);
+        volleyQueue.add(request);
+    }
+
+    // --- FAVORITOS (NOVO) ---
+
+    public void getFavorites(final FavoriteListener listener) {
+        String url = BASE_URL + "/favorites";
+        JsonArrayRequest request = new JsonArrayRequest(Request.Method.GET, url, null,
+                response -> {
+                    ArrayList<Session> favorites = FavoritesJsonParser.parserFavorites(response.toString());
+                    listener.onFavoritesLoaded(favorites);
+                },
+                error -> listener.onError(handleVolleyError(error))
+        ) {
+            @Override public Map<String, String> getHeaders() { return getAuthHeaders(); }
+        };
+        applyRetryPolicy(request);
+        volleyQueue.add(request);
+    }
+    public void toggleFavorite(Session session, final FavoriteListener listener) {
+        if (session.isFavorite()) removeFavorite(session, listener);
+        else addFavorite(session, listener);
+    }
+
+    private void addFavorite(Session session, final FavoriteListener listener) {
+        String url = BASE_URL + "/favorites";
+        JSONObject body = new JSONObject();
+        try { body.put("session_id", session.getId()); } catch (JSONException e) { e.printStackTrace(); }
+
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, body,
+                response -> {
+                    int newId = FavoritesJsonParser.parserAddFavoriteResponse(response.toString());
+
+                    session.setFavorite(true);
+                    if (newId != -1) session.setFavoriteId(newId);
+
+                    if (listener != null) listener.onFavoriteChanged(session.getId(), true);
+                },
+                error -> {
+                    if (error.networkResponse != null && error.networkResponse.statusCode == 500) {
+                        session.setFavorite(true);
+                        if (listener != null) listener.onFavoriteChanged(session.getId(), true);
+                    } else {
+                        if (listener != null) listener.onError(handleVolleyError(error));
                     }
                 }
         ) {
-            @Override
-            public Map<String, String> getHeaders() {
-                Map<String, String> headers = new HashMap<>();
-                String token = getAccessToken();
-                if (token != null) headers.put("Authorization", "Bearer " + token);
-                return headers;
-            }
+            @Override public Map<String, String> getHeaders() { return getAuthHeaders(); }
         };
+        applyRetryPolicy(request);
         volleyQueue.add(request);
+    }
+
+    private void removeFavorite(Session session, final FavoriteListener listener) {
+        String url = BASE_URL + "/favorites/" + session.getId();
+
+        StringRequest request = new StringRequest(Request.Method.DELETE, url,
+                response -> {
+                    session.setFavorite(false);
+                    if (listener != null) listener.onFavoriteChanged(session.getId(), false);
+                },
+                error -> {
+                    if (listener != null) listener.onError(handleVolleyError(error));
+                }) {
+            @Override public Map<String, String> getHeaders() { return getAuthHeaders(); }
+        };
+        applyRetryPolicy(request);
+        volleyQueue.add(request);
+    }
+
+
+    private String handleVolleyError(VolleyError error) {
+        if (error.networkResponse != null) {
+            int code = error.networkResponse.statusCode;
+            if (code == 401) return "Sessão expirada. Faça login novamente.";
+            if (code == 403) return "Sem permissão.";
+            if (code == 500) return "Erro interno do servidor.";
+            return "Erro no servidor (Código: " + code + ")";
+        }
+        return "Sem conexão à internet ou VPN inativa.";
     }
 
     public interface EventsListener {
@@ -238,5 +255,4 @@ public class SingletonManager {
         void onEventDetailsLoaded(Event event);
         void onError(String message);
     }
-
 }

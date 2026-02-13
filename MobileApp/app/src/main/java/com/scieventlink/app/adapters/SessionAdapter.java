@@ -3,6 +3,7 @@ package com.scieventlink.app.adapters;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -14,14 +15,22 @@ public class SessionAdapter extends RecyclerView.Adapter<SessionAdapter.ViewHold
 
     private ArrayList<Session> sessions;
     private OnSessionClickListener listener;
+    private OnFavoriteClickListener favoriteClickListener;
 
-    // Interface para clique na sessão (para o futuro Nível 3)
     public interface OnSessionClickListener {
         void onSessionClick(Session session);
     }
 
+    public interface OnFavoriteClickListener {
+        void onFavoriteClick(Session session, int position);
+    }
+
     public void setOnSessionClickListener(OnSessionClickListener listener) {
         this.listener = listener;
+    }
+
+    public void setOnFavoriteClickListener(OnFavoriteClickListener listener) {
+        this.favoriteClickListener = listener;
     }
 
     public SessionAdapter(ArrayList<Session> sessions) {
@@ -39,12 +48,34 @@ public class SessionAdapter extends RecyclerView.Adapter<SessionAdapter.ViewHold
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Session session = sessions.get(position);
         holder.tvTitle.setText(session.getTitle());
-        // Ajusta aqui conforme os teus Getters na classe Session
-        holder.tvTime.setText(session.getStartTime().substring(11, 16) + " - " + session.getEndTime().substring(11, 16));
+
+        // Formatação de hora
+        try {
+            String start = session.getStartTime().substring(11, 16);
+            String end = session.getEndTime().substring(11, 16);
+            holder.tvTime.setText(start + " - " + end);
+        } catch (Exception e) {
+            holder.tvTime.setText(session.getStartTime());
+        }
+
         holder.tvLocation.setText(" | " + session.getLocation());
+
+        // Atualiza ícone de favorito conforme o estado da sessão
+        if (session.isFavorite()) {
+            holder.ivFavorite.setImageResource(android.R.drawable.btn_star_big_on);
+        } else {
+            holder.ivFavorite.setImageResource(android.R.drawable.btn_star_big_off);
+        }
 
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) listener.onSessionClick(session);
+        });
+
+        // Clique na estrela
+        holder.ivFavorite.setOnClickListener(v -> {
+            if (favoriteClickListener != null) {
+                favoriteClickListener.onFavoriteClick(session, position);
+            }
         });
     }
 
@@ -60,12 +91,14 @@ public class SessionAdapter extends RecyclerView.Adapter<SessionAdapter.ViewHold
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
         TextView tvTitle, tvTime, tvLocation;
+        ImageView ivFavorite;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             tvTitle = itemView.findViewById(R.id.tvSessionTitle);
             tvTime = itemView.findViewById(R.id.tvSessionTime);
             tvLocation = itemView.findViewById(R.id.tvSessionLocation);
+            ivFavorite = itemView.findViewById(R.id.ivFavorite);
         }
     }
 }

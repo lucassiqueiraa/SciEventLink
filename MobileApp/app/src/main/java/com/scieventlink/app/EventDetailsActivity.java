@@ -12,7 +12,9 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.scieventlink.app.adapters.SessionAdapter;
+import com.scieventlink.app.listeners.FavoriteListener;
 import com.scieventlink.app.models.Event;
+import com.scieventlink.app.models.Session;
 import com.scieventlink.app.models.SingletonManager;
 
 import java.util.ArrayList;
@@ -29,11 +31,9 @@ public class EventDetailsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_event_details);
 
-        // 1. Configurar a Toolbar explicitamente
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        // 2. Forçar a exibição da seta de voltar
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setDisplayShowHomeEnabled(true);
@@ -41,7 +41,6 @@ public class EventDetailsActivity extends AppCompatActivity {
         }
 
         eventId = getIntent().getIntExtra("event_id", -1);
-
         if (eventId == -1) {
             Toast.makeText(this, "Erro: Evento inválido", Toast.LENGTH_SHORT).show();
             finish();
@@ -57,17 +56,31 @@ public class EventDetailsActivity extends AppCompatActivity {
         adapter = new SessionAdapter(new ArrayList<>());
         rvSessions.setAdapter(adapter);
 
-        carregarDetalhes();
-    }
+        adapter.setOnFavoriteClickListener(new SessionAdapter.OnFavoriteClickListener() {
+            @Override
+            public void onFavoriteClick(Session session, int position) {
+                SingletonManager.getInstance(EventDetailsActivity.this).toggleFavorite(session, new FavoriteListener() {
+                    @Override
+                    public void onFavoriteChanged(int sessionId, boolean isFavorite) {
+                        adapter.notifyItemChanged(position);
 
-    @Override
-    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        // Captura o clique na seta de voltar
-        if (item.getItemId() == android.R.id.home) {
-            onBackPressed();
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
+                        String msg = isFavorite ? "Adicionado aos favoritos!" : "Removido dos favoritos.";
+                        Toast.makeText(EventDetailsActivity.this, msg, Toast.LENGTH_SHORT).show();
+                    }
+
+                    @Override
+                    public void onFavoritesLoaded(ArrayList<Session> favoriteSessions) {}
+
+                    @Override
+                    public void onError(String message) {
+                        Toast.makeText(EventDetailsActivity.this, "Erro: " + message, Toast.LENGTH_SHORT).show();
+                        adapter.notifyItemChanged(position);
+                    }
+                });
+            }
+        });
+
+        carregarDetalhes();
     }
 
     private void carregarDetalhes() {
@@ -87,8 +100,17 @@ public class EventDetailsActivity extends AppCompatActivity {
 
             @Override
             public void onError(String message) {
-                Toast.makeText(EventDetailsActivity.this, "Erro: " + message, Toast.LENGTH_SHORT).show();
+                Toast.makeText(EventDetailsActivity.this, "Erro ao carregar: " + message, Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        if (item.getItemId() == android.R.id.home) {
+            onBackPressed();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 }
