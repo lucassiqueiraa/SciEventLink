@@ -7,13 +7,15 @@ use yii\rest\Controller;
 use yii\filters\auth\HttpBearerAuth;
 use common\models\SessionQuestion;
 use common\models\Session;
+use yii\web\NotFoundHttpException;
+use yii\web\Response;
 
 class QuestionController extends Controller
 {
     public function behaviors()
     {
         $behaviors = parent::behaviors();
-        $behaviors['contentNegotiator']['formats']['application/json'] = \yii\web\Response::FORMAT_JSON;
+        $behaviors['contentNegotiator']['formats']['application/json'] = Response::FORMAT_JSON;
         $behaviors['authenticator'] = [
             'class' => HttpBearerAuth::class,
         ];
@@ -24,35 +26,33 @@ class QuestionController extends Controller
      * GET /api/questions?session_id=7
      * Lista APENAS as perguntas APROVADAS de uma sessão
      */
-    public function actionIndex()
+    public function actionIndex($session_id)
     {
-        $sessionId = Yii::$app->request->get('session_id');
-
-        if (!$sessionId) {
+        if (!$session_id) {
             Yii::$app->response->statusCode = 400;
             return ['message' => 'O parametro session_id é obrigatório.'];
         }
 
-        // Busca perguntas ordenadas
         $questions = SessionQuestion::find()
-            ->where(['session_id' => $sessionId])
-            ->andWhere(['status' => SessionQuestion::STATUS_APPROVED]) // <--- SÓ MOSTRA APROVADAS
+            ->where(['session_id' => $session_id])
+            ->andWhere(['status' => SessionQuestion::STATUS_APPROVED])
             ->orderBy(['created_at' => SORT_DESC])
             ->with('user')
             ->all();
 
         $data = [];
-        foreach ($questions as $q) {
+        foreach ($questions as $question) {
             $data[] = [
-                'id' => $q->id,
-                'question_text' => $q->question_text, // <-- Nome correto da coluna
-                'created_at' => $q->created_at,
-                'user_name' => $q->user ? $q->user->username : 'Anónimo',
+                'id' => $question->id,
+                'question_text' => $question->question_text,
+                'created_at' => $question->created_at,
+                'user_name' => $question->user ? $question->user->username : 'Anónimo',
             ];
         }
 
         return $data;
     }
+
 
     /**
      * POST /api/questions
@@ -63,7 +63,7 @@ class QuestionController extends Controller
     {
         $userId = Yii::$app->user->id;
         $sessionId = Yii::$app->request->post('session_id');
-        $text = Yii::$app->request->post('question_text'); // <-- Nome correto da coluna
+        $text = Yii::$app->request->post('question_text');
 
         if (!$sessionId || !$text) {
             Yii::$app->response->statusCode = 400;
@@ -71,14 +71,13 @@ class QuestionController extends Controller
         }
 
         if (!Session::findOne($sessionId)) {
-            throw new \yii\web\NotFoundHttpException("Sessão não encontrada.");
+            throw new NotFoundHttpException("Sessão não encontrada.");
         }
 
         $model = new SessionQuestion();
         $model->user_id = $userId;
         $model->session_id = $sessionId;
         $model->question_text = $text;
-        // O status já fica 'pending' automaticamente pelas regras do teu model
 
         if ($model->save()) {
             return [

@@ -1,8 +1,9 @@
 <?php
 
+use yii\data\ArrayDataProvider;
 use yii\helpers\Html;
 use yii\bootstrap5\ActiveForm;
-use yii\bootstrap5\Tabs; // Importar o Widget de Abas
+use yii\bootstrap5\Tabs;
 
 /** @var yii\web\View $this */
 /** @var common\models\Event $model */
@@ -14,7 +15,6 @@ use yii\bootstrap5\Tabs; // Importar o Widget de Abas
     <?php $form = ActiveForm::begin(); ?>
 
     <?php
-    // Definição das Abas
     echo Tabs::widget([
             'items' => [
                     [
@@ -33,7 +33,6 @@ use yii\bootstrap5\Tabs; // Importar o Widget de Abas
                                     'venuesDataProvider' => $venuesDataProvider ?? null
                             ]),
                     ],
-
                     [
                             'label' => 'Bilhetes (Modalidades)',
                             'content' => $this->render('_form_tickets', [
@@ -41,7 +40,6 @@ use yii\bootstrap5\Tabs; // Importar o Widget de Abas
                                     'ticketsDataProvider' => $ticketsDataProvider ?? null
                             ]),
                     ],
-
                     [
                             'label' => 'Agenda (Sessões)',
                             'content' => $this->render('_form_sessions', [
@@ -53,9 +51,10 @@ use yii\bootstrap5\Tabs; // Importar o Widget de Abas
                             'label' => 'Avaliadores',
                             'content' => $this->render('_form_evaluators', [
                                     'event' => $model,
-                                    'evaluatorsProvider' => $evaluatorsProvider,
-                                    'candidatesProvider' => $candidatesProvider,
+                                    'evaluatorsProvider' => $evaluatorsProvider ?? new ArrayDataProvider(),
+                                    'candidatesProvider' => $candidatesProvider ?? new ArrayDataProvider(),
                             ]),
+                            'headerOptions' => $model->isNewRecord ? ['class' => 'disabled'] : [],
                     ],
             ],
             'navType' => 'nav-tabs',

@@ -4,6 +4,7 @@ namespace common\models;
 
 use Yii;
 use yii\behaviors\TimestampBehavior;
+use yii\db\ActiveRecord;
 use yii\db\Expression;
 
 /**
@@ -19,7 +20,7 @@ use yii\db\Expression;
  * @property Session $session
  * @property User $user
  */
-class SessionFeedback extends \yii\db\ActiveRecord
+class SessionFeedback extends ActiveRecord
 {
 
 

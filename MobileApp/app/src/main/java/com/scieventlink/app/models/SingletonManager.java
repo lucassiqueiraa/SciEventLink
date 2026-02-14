@@ -15,15 +15,20 @@ import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.scieventlink.app.listeners.FavoriteListener;
+import com.scieventlink.app.listeners.FeedbackListener;
 import com.scieventlink.app.listeners.LoginListener;
+import com.scieventlink.app.listeners.QuestionListener;
 import com.scieventlink.app.utils.EventJsonParser;
 import com.scieventlink.app.utils.FavoritesJsonParser;
+import com.scieventlink.app.utils.FeedbackJsonParser;
 import com.scieventlink.app.utils.LoginJsonParser;
+import com.scieventlink.app.utils.QuestionJsonParser;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -44,7 +49,6 @@ public class SingletonManager {
     private Context context;
     private LoginListener loginListener;
 
-    // Timeout de 10 segundos para a VPN do IPLeiria
     private static final int TIMEOUT_MS = 10000;
 
     private SingletonManager(Context context) {
@@ -66,7 +70,7 @@ public class SingletonManager {
         return prefs.getString(KEY_TOKEN, null);
     }
 
-    // --- MÉTODOS GENÉRICOS (BOAS PRÁTICAS) ---
+    // --- MÉTODOS GENÉRICOS  ---
 
     private Map<String, String> getAuthHeaders() {
         Map<String, String> headers = new HashMap<>();
@@ -234,6 +238,63 @@ public class SingletonManager {
         volleyQueue.add(request);
     }
 
+    // --- FEEDBACK ---
+
+    public void sendSessionFeedback(int sessionId, int rating, String comment, final FeedbackListener listener) {
+        String url = BASE_URL + "/feedback";
+        JSONObject body = FeedbackJsonParser.prepareFeedbackJson(sessionId, rating, comment);
+
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, body,
+                response -> {
+                    if (listener != null) listener.onFeedbackSuccess();
+                },
+                error -> {
+                    if (listener != null) {
+                        String message = handleVolleyError(error);
+                        if (error.networkResponse != null && error.networkResponse.data != null) {
+                            try {
+                                String responseBody = new String(error.networkResponse.data, StandardCharsets.UTF_8);
+                                message = FeedbackJsonParser.parseFeedbackError(responseBody);
+                            } catch (Exception e) { e.printStackTrace(); }
+                        }
+                        listener.onFeedbackError(message);
+                    }
+                }
+        ) {
+            @Override public Map<String, String> getHeaders() { return getAuthHeaders(); }
+        };
+        applyRetryPolicy(request);
+        volleyQueue.add(request);
+    }
+
+    // --- QUESTIONS (Q&A) ---
+
+    public void sendSessionQuestion(int sessionId, String questionText, final QuestionListener listener) {
+        String url = BASE_URL + "/questions";
+        JSONObject body = QuestionJsonParser.prepareQuestionJson(sessionId, questionText);
+
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, body,
+                response -> {
+                    if (listener != null) listener.onQuestionSuccess();
+                },
+                error -> {
+                    if (listener != null) {
+                        String message = handleVolleyError(error);
+                        if (error.networkResponse != null && error.networkResponse.data != null) {
+                            try {
+                                String responseBody = new String(error.networkResponse.data, StandardCharsets.UTF_8);
+                                message = QuestionJsonParser.parseQuestionError(responseBody);
+                            } catch (Exception e) { e.printStackTrace(); }
+                        }
+                        listener.onQuestionError(message);
+                    }
+                }
+        ) {
+            @Override public Map<String, String> getHeaders() { return getAuthHeaders(); }
+        };
+        applyRetryPolicy(request);
+        volleyQueue.add(request);
+    }
 
 
     public void setAccessToken(String token) {

@@ -36,11 +36,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // 1. Configurar Toolbar
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        // 2. Configurar Drawer e Navigation
         drawerLayout = findViewById(R.id.drawerLayout);
         NavigationView navigationView = findViewById(R.id.navView);
         navigationView.setNavigationItemSelectedListener(this);
@@ -77,17 +75,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         } catch (Exception e) {
             android.util.Log.e("MainActivity", "Erro ao configurar cabeçalho: " + e.getMessage());
         }
-        // ----------------------------------
 
-        // 4. Configurar Lista
         rvEvents = findViewById(R.id.rvEvents);
         rvEvents.setLayoutManager(new LinearLayoutManager(this));
 
-        // Inicializar adaptador VAZIO primeiro para evitar erro
         adapter = new EventAdapter(new ArrayList<>());
         rvEvents.setAdapter(adapter);
 
-        // 5. Carregar dados
         carregarEventos();
 
         adapter.setOnItemClickListener(new EventAdapter.OnItemClickListener() {

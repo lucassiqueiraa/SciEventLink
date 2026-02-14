@@ -1,125 +1,77 @@
 document.addEventListener('DOMContentLoaded', function() {
 
-    const API_URL = '/scieventlink/WebApp/backend/web/api/checkin/validate?code=';
+    // Função para mostrar erros na tela (caso a consola esteja escondida)
+    function logError(msg) {
+        console.error(msg);
+        document.getElementById('debug-log').innerText = "ERRO: " + msg;
+    }
 
-    let isScanning = true;
-    let html5QrcodeScanner = null;
+    console.log("1. Script de validação iniciado...");
 
-    /**
-     * Main function that handles scanner reading
-     */
+    // 1. Verifica se a biblioteca carregou
+    if (typeof Html5QrcodeScanner === 'undefined') {
+        logError("A biblioteca Html5QrcodeScanner NÃO carregou. Verifique a internet ou o bloqueio do Brave.");
+        return;
+    }
+
+    console.log("2. Biblioteca detetada. A iniciar scanner...");
+
+    // 2. Configura o Scanner
+    const scanner = new Html5QrcodeScanner(
+        "reader",
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        false
+    );
+
+    // 3. O PASSO CRÍTICO: Mandar renderizar (Iniciar a câmara)
+    try {
+        scanner.render(onScanSuccess, onScanFailure);
+        console.log("3. Comando render() enviado.");
+    } catch (e) {
+        logError("Falha ao iniciar câmara: " + e.message);
+    }
+
+    // --- Funções de Lógica ---
+
     function onScanSuccess(decodedText, decodedResult) {
-        if (!isScanning) return;
+        // Pausa para não ler 1000 vezes
+        scanner.clear();
 
-        isScanning = false;
+        console.log(`Código lido: ${decodedText}`);
 
         let ticketId = decodedText;
-
         if (decodedText.startsWith("BILHETE-")) {
-            let parts = decodedText.split('-');
-            if (parts[1]) {
-                ticketId = parts[1];
-                console.log("Código limpo: " + ticketId);
-            }
+            ticketId = decodedText.split('-')[1];
         }
 
         validateTicket(ticketId);
     }
 
     function onScanFailure(error) {
+        // Não fazer nada, é normal falhar enquanto procura
     }
 
-    /**
-     * Validate the ticket in the API
-     */
+    // Simulação da função de validar (ajusta a URL se necessário)
     async function validateTicket(code) {
-        Swal.fire({
-            title: 'A validar...',
-            text: 'Aguarde um momento',
-            allowOutsideClick: false,
-            didOpen: () => { Swal.showLoading() }
-        });
+        Swal.fire({ title: 'A processar...', didOpen: () => Swal.showLoading() });
+
+        // ATENÇÃO: Confirma se esta URL bate certo com o teu backend
+        const url = `/scieventlink/backend/web/index.php?r=api/checkin/validate&code=${code}`;
 
         try {
-            const response = await fetch(API_URL + code);
-
+            const response = await fetch(url);
             const data = await response.json();
 
             if (data.success) {
-                await Swal.fire({
-                    icon: 'success',
-                    title: 'Entrada Permitida!',
-                    text: `Participante: ${data.participant}`,
-                    timer: 2000,
-                    showConfirmButton: false
-                });
-
-                logScan(`✅ Bilhete #${code} - ${data.participant}`);
-
+                Swal.fire('Sucesso!', `Bem-vindo ${data.participant}`, 'success')
+                    .then(() => location.reload()); // Recarrega para ler o próximo
             } else {
-                await Swal.fire({
-                    icon: 'error',
-                    title: 'Acesso Negado',
-                    text: data.message,
-                    footer: data.checkin_time ? `Entrou às: ${data.checkin_time}` : ''
-                });
-
-                logScan(`❌ Bilhete #${code} - ${data.message}`);
+                Swal.fire('Erro!', data.message, 'error')
+                    .then(() => location.reload());
             }
-
-        } catch (error) {
-            console.error('Erro Técnico:', error);
-            await Swal.fire('Erro', 'Falha na conexão com a API', 'error');
-
-        } finally {
-            isScanning = true;
+        } catch (err) {
+            Swal.fire('Erro Técnico', 'Falha na conexão', 'error');
+            console.error(err);
         }
-    }
-
-    /**
-     * Records in the page history in a SECURE manner
-     */
-    function logScan(message) {
-        const log = document.getElementById('scan-log');
-        if (!log) return;
-
-        const time = new Date().toLocaleTimeString();
-
-        const newEntry = document.createElement('div');
-
-        const timeSpan = document.createElement('small');
-        timeSpan.textContent = time + ' - ';
-
-        const messageNode = document.createTextNode(message);
-
-        newEntry.appendChild(timeSpan);
-        newEntry.appendChild(messageNode);
-
-        log.prepend(newEntry);
-    }
-
-    /**
-     * Function for manual button
-     */
-    function validateManual() {
-        const input = document.getElementById('manual-code');
-        const code = input.value;
-        if(code) {
-            validateTicket(code);
-            input.value = '';
-        }
-    }
-
-    if (document.getElementById('reader')) {
-        html5QrcodeScanner = new Html5QrcodeScanner(
-            "reader",
-            { fps: 10, qrbox: { width: 250, height: 250 } },
-            false
-        );
-    }
-
-    const btnManual = document.querySelector('#manual-btn');L
-    if (btnManual) {
-        btnManual.addEventListener('click', validateManual);
     }
 });

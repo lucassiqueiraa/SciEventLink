@@ -11,31 +11,41 @@ import com.scieventlink.app.R;
 import com.scieventlink.app.models.Session;
 import java.util.ArrayList;
 
+// Removemos o import do AdapterView que estava a causar conflito
+
 public class SessionAdapter extends RecyclerView.Adapter<SessionAdapter.ViewHolder> {
 
     private ArrayList<Session> sessions;
-    private OnSessionClickListener listener;
+
+    private OnItemClickListener itemListener;
     private OnFavoriteClickListener favoriteClickListener;
 
-    public interface OnSessionClickListener {
-        void onSessionClick(Session session);
+    public SessionAdapter(ArrayList<Session> sessions) {
+        this.sessions = sessions;
     }
 
+    // --- INTERFACES ---
+
+    public interface OnItemClickListener {
+        void onItemClick(Session session);
+    }
+
+    // Interface para clicar no coração (Favoritos)
     public interface OnFavoriteClickListener {
         void onFavoriteClick(Session session, int position);
     }
 
-    public void setOnSessionClickListener(OnSessionClickListener listener) {
-        this.listener = listener;
+    // --- SETTERS ---
+
+    public void setOnItemClickListener(OnItemClickListener listener) {
+        this.itemListener = listener;
     }
 
     public void setOnFavoriteClickListener(OnFavoriteClickListener listener) {
         this.favoriteClickListener = listener;
     }
 
-    public SessionAdapter(ArrayList<Session> sessions) {
-        this.sessions = sessions;
-    }
+    // --- MÉTODOS DO ADAPTER ---
 
     @NonNull
     @Override
@@ -47,20 +57,19 @@ public class SessionAdapter extends RecyclerView.Adapter<SessionAdapter.ViewHold
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Session session = sessions.get(position);
-        holder.tvTitle.setText(session.getTitle());
 
-        // Formatação de hora
+        // Preencher dados
+        holder.tvTitle.setText(session.getTitle());
+        holder.tvLocation.setText(" | " + session.getLocation());
+
         try {
-            String start = session.getStartTime().substring(11, 16);
-            String end = session.getEndTime().substring(11, 16);
+            String start = session.getStartTime().length() > 16 ? session.getStartTime().substring(11, 16) : session.getStartTime();
+            String end = session.getEndTime().length() > 16 ? session.getEndTime().substring(11, 16) : session.getEndTime();
             holder.tvTime.setText(start + " - " + end);
         } catch (Exception e) {
             holder.tvTime.setText(session.getStartTime());
         }
 
-        holder.tvLocation.setText(" | " + session.getLocation());
-
-        // Atualiza ícone de favorito conforme o estado da sessão
         if (session.isFavorite()) {
             holder.ivFavorite.setImageResource(android.R.drawable.btn_star_big_on);
         } else {
@@ -68,13 +77,14 @@ public class SessionAdapter extends RecyclerView.Adapter<SessionAdapter.ViewHold
         }
 
         holder.itemView.setOnClickListener(v -> {
-            if (listener != null) listener.onSessionClick(session);
+            if (itemListener != null) {
+                itemListener.onItemClick(session);
+            }
         });
 
-        // Clique na estrela
         holder.ivFavorite.setOnClickListener(v -> {
             if (favoriteClickListener != null) {
-                favoriteClickListener.onFavoriteClick(session, position);
+                favoriteClickListener.onFavoriteClick(session, holder.getAdapterPosition());
             }
         });
     }

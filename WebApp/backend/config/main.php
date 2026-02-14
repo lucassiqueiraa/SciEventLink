@@ -72,7 +72,7 @@ return [
                 'DELETE api/favorites/<id:\d+>' => 'api/favorite/delete',
 
                 'POST api/feedback' => 'api/feedback/create',
-                'GET api/questions' => 'api/question/index',
+                'GET api/sessions/<session_id:\d+>/questions' => 'api/question/index',
                 'POST api/questions' => 'api/question/create',
             ],
         ],

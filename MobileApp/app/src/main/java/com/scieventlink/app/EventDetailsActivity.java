@@ -1,5 +1,6 @@
 package com.scieventlink.app;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.widget.TextView;
@@ -55,6 +56,20 @@ public class EventDetailsActivity extends AppCompatActivity {
         rvSessions.setLayoutManager(new LinearLayoutManager(this));
         adapter = new SessionAdapter(new ArrayList<>());
         rvSessions.setAdapter(adapter);
+
+        adapter.setOnItemClickListener(new SessionAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(Session session) {
+                Intent intent = new Intent(EventDetailsActivity.this, SessionDetailsActivity.class);
+                intent.putExtra("session_id", session.getId());
+                intent.putExtra("session_title", session.getTitle());
+                String infoExtra = "Local: " + session.getLocation() +
+                        "\nCapacidade: " + session.getCapacity() + " pessoas" +
+                        "\nHorário: " + session.getStartTime();
+                intent.putExtra("session_description", infoExtra);
+                startActivity(intent);
+            }
+        });
 
         adapter.setOnFavoriteClickListener(new SessionAdapter.OnFavoriteClickListener() {
             @Override

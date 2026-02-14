@@ -3,4 +3,14 @@
     <string name="txt_eventos_disponiveis">Eventos Disponíveis</string>
     <string name="navigation_drawer_open">Abrir menu de navegação</string>
     <string name="navigation_drawer_close">Fechar menu de navegação</string>
+    <string name="description_table">Abas de navegação entre detalhes e perguntas</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="strLoading">Carregando título...</string>
+    <string name="strLoaingDescription">Carregando descrição...</string>
+    <string name="strFeedback">Avalie esta sessão</string>
+    <string name="hintCommentary">Comentário (Opcional)</string>
+    <string name="senEvaluation">Enviar Avaliação</string>
+    <string name="qaContentDescription">Enviar Pergunta</string>
+    <string name="qaHint">Escreva a sua pergunta...</string>
 </resources>
