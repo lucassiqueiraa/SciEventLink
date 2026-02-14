@@ -42,7 +42,7 @@ class FavoriteController extends Controller
                     'title' => $fav->session->title,
                     'start_time' => $fav->session->start_time,
                     'location' => $fav->session->venue ? $fav->session->venue->name : 'N/A',
-                    'is_favorite' => true // Redundante aqui, mas não faz mal
+                    'is_favorite' => true
                 ];
             }
         }

@@ -19,7 +19,7 @@ return [
 
     'as access' => [
         'class' => 'yii\filters\AccessControl',
-        'except' => ['site/login', 'site/error', 'api/*'], // <--- LIBERA A API AQUI
+        'except' => ['site/login', 'site/error', 'api/*'],
         'rules' => [
             [
                 'allow' => true,
