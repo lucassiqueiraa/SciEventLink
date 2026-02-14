@@ -40,6 +40,7 @@
                 android:layout_weight="1"
                 android:background="@android:color/transparent"
                 android:hint="@string/qaHint"
+                android:textColorHint="@color/colorTxtSecondary"
                 android:inputType="textCapSentences"
                 android:maxLines="4"
                 android:padding="15dp" />

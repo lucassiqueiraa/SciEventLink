@@ -171,7 +171,7 @@ public class SingletonManager {
         volleyQueue.add(request);
     }
 
-    // --- FAVORITOS (NOVO) ---
+    // --- FAVORITOS ---
 
     public void getFavorites(final FavoriteListener listener) {
         String url = BASE_URL + "/favorites";
@@ -269,6 +269,23 @@ public class SingletonManager {
 
     // --- QUESTIONS (Q&A) ---
 
+    public void getSessionQuestions(int sessionId, final QuestionsListListener listener) {
+        String url = BASE_URL + "/sessions/" + sessionId + "/questions";
+        JsonArrayRequest request = new JsonArrayRequest(Request.Method.GET, url, null,
+                response -> {
+                    ArrayList<Question> questions = QuestionJsonParser.parseQuestions(response.toString());
+                    if (listener != null) listener.onQuestionsLoaded(questions);
+                },
+                error -> {
+                    if (listener != null) listener.onError(handleVolleyError(error));
+                }
+        ) {
+            @Override public Map<String, String> getHeaders() { return getAuthHeaders(); }
+        };
+        applyRetryPolicy(request);
+        volleyQueue.add(request);
+    }
+
     public void sendSessionQuestion(int sessionId, String questionText, final QuestionListener listener) {
         String url = BASE_URL + "/questions";
         JSONObject body = QuestionJsonParser.prepareQuestionJson(sessionId, questionText);
@@ -335,6 +352,11 @@ public class SingletonManager {
 
     public interface EventDetailsListener {
         void onEventDetailsLoaded(Event event);
+        void onError(String message);
+    }
+
+    public interface QuestionsListListener {
+        void onQuestionsLoaded(ArrayList<Question> questions);
         void onError(String message);
     }
 }

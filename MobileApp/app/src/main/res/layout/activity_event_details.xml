@@ -31,7 +31,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Data"
-            android:textColor="#757575"
+            android:textColor="@color/colorTxtSecondary"
             android:layout_marginBottom="8dp"/>
 
         <TextView
@@ -39,6 +39,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="..."
+            android:textColor="@color/black"
             android:textSize="14sp"
             android:layout_marginBottom="16dp"/>
 
@@ -54,6 +55,7 @@
             android:text="Agenda (Sessões)"
             android:textSize="18sp"
             android:textStyle="bold"
+            android:textColor="@color/colorPrimary"
             android:layout_marginBottom="8dp"/>
 
         <androidx.recyclerview.widget.RecyclerView

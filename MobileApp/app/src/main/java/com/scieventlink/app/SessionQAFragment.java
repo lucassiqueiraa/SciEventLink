@@ -15,12 +15,17 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.scieventlink.app.R;
+import com.scieventlink.app.adapters.QuestionAdapter;
 import com.scieventlink.app.listeners.QuestionListener;
+import com.scieventlink.app.models.Question;
 import com.scieventlink.app.models.SingletonManager;
+
+import java.util.ArrayList;
 
 public class SessionQAFragment extends Fragment {
 
     private int sessionId;
+    private QuestionAdapter adapter;
 
     public SessionQAFragment() {
     }
@@ -52,6 +57,11 @@ public class SessionQAFragment extends Fragment {
 
         RecyclerView rvQuestions = view.findViewById(R.id.rvQuestions);
         rvQuestions.setLayoutManager(new LinearLayoutManager(getContext()));
+        
+        adapter = new QuestionAdapter(new ArrayList<>());
+        rvQuestions.setAdapter(adapter);
+
+        loadQuestions();
 
         EditText etQuestion = view.findViewById(R.id.etQuestion);
         ImageButton btnSend = view.findViewById(R.id.btnSendQuestion);
@@ -72,7 +82,7 @@ public class SessionQAFragment extends Fragment {
                     Toast.makeText(getContext(), "Pergunta enviada!", Toast.LENGTH_SHORT).show();
                     etQuestion.setText("");
                     btnSend.setEnabled(true);
-
+                    loadQuestions();
                 }
 
                 @Override
@@ -82,6 +92,24 @@ public class SessionQAFragment extends Fragment {
                     btnSend.setEnabled(true);
                 }
             });
+        });
+    }
+
+    private void loadQuestions() {
+        SingletonManager.getInstance(getContext()).getSessionQuestions(sessionId, new SingletonManager.QuestionsListListener() {
+            @Override
+            public void onQuestionsLoaded(ArrayList<Question> questions) {
+                if (adapter != null) {
+                    adapter.updateQuestions(questions);
+                }
+            }
+
+            @Override
+            public void onError(String message) {
+                if (getContext() != null) {
+                    Toast.makeText(getContext(), "Erro ao carregar perguntas: " + message, Toast.LENGTH_SHORT).show();
+                }
+            }
         });
     }
 }

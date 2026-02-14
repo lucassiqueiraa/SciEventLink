@@ -14,11 +14,13 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.navigation.NavigationView;
 import com.scieventlink.app.adapters.EventAdapter;
+import com.scieventlink.app.FavoritesFragment;
 import com.scieventlink.app.models.Event;
 import com.scieventlink.app.models.SingletonManager;
 
@@ -28,6 +30,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     private RecyclerView rvEvents;
     private EventAdapter adapter;
+    private View layoutContentMain;
 
     private DrawerLayout drawerLayout;
 
@@ -49,11 +52,15 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         drawerLayout.addDrawerListener(toggle);
         toggle.syncState();
 
+        layoutContentMain = findViewById(R.id.layout_content_main);
+
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
                 if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
                     drawerLayout.closeDrawer(GravityCompat.START);
+                } else if (layoutContentMain.getVisibility() == View.GONE) {
+                    mostrarEventos();
                 } else {
                     setEnabled(false);
                     getOnBackPressedDispatcher().onBackPressed();
@@ -99,6 +106,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         int id = item.getItemId();
 
         if (id == R.id.nav_eventos) {
+            mostrarEventos();
+        } else if (id == R.id.nav_favorites) {
+            layoutContentMain.setVisibility(View.GONE);
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.fragment_container, new FavoritesFragment())
+                    .commit();
         } else if (id == R.id.nav_bilhetes) {
             Toast.makeText(this, "Bilhetes em breve...", Toast.LENGTH_SHORT).show();
         } else if (id == R.id.nav_logout) {
@@ -110,6 +123,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         drawerLayout.closeDrawer(GravityCompat.START);
         return true;
+    }
+
+    private void mostrarEventos() {
+        layoutContentMain.setVisibility(View.VISIBLE);
+        Fragment fragment = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+        if (fragment != null) {
+            getSupportFragmentManager().beginTransaction().remove(fragment).commit();
+        }
     }
 
 

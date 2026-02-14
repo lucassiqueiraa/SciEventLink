@@ -24,20 +24,24 @@
         android:text="Bem-vindo"
         android:textSize="28sp"
         android:textStyle="bold"
-        android:textColor="@android:color/black"
+        android:textColor="@color/black"
         android:layout_marginBottom="32dp"/>
 
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Username"
-        app:startIconDrawable="@android:drawable/ic_menu_myplaces">
+        app:startIconDrawable="@android:drawable/ic_menu_myplaces"
+        app:startIconTint="@color/colorPrimary"
+        app:boxStrokeColor="@color/colorPrimary"
+        app:hintTextColor="@color/colorPrimary">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/etUsername"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:inputType="textEmailAddress"
+            android:textColor="@color/black"
             android:maxLines="1" />
     </com.google.android.material.textfield.TextInputLayout>
 
@@ -47,11 +51,16 @@
         android:layout_marginTop="16dp"
         android:hint="Password"
         app:endIconMode="password_toggle"
-        app:startIconDrawable="@android:drawable/ic_lock_lock">
+        app:endIconTint="@color/colorPrimary"
+        app:startIconDrawable="@android:drawable/ic_lock_lock"
+        app:startIconTint="@color/colorPrimary"
+        app:boxStrokeColor="@color/colorPrimary"
+        app:hintTextColor="@color/colorPrimary">
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/etPassword"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:textColor="@color/black"
             android:inputType="textPassword" />
     </com.google.android.material.textfield.TextInputLayout>
 
@@ -60,7 +69,9 @@
         android:layout_width="match_parent"
         android:layout_height="60dp"
         android:text="ENTRAR"
+        android:textColor="@color/white"
         android:textStyle="bold"
+        android:backgroundTint="@color/colorPrimary"
         android:layout_marginTop="32dp"/>
 
 </LinearLayout>

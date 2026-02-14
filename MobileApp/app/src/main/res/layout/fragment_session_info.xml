@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true"
+    android:background="@android:color/white"
     android:padding="16dp">
 
     <LinearLayout
@@ -25,7 +27,8 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:text="@string/strLoaingDescription"
-            android:textSize="16sp" />
+            android:textSize="16sp"
+            android:textColor="@color/colorTxtSecondary"/>
 
         <View
             android:layout_width="match_parent"
@@ -48,13 +51,18 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:numStars="5"
-            android:stepSize="1.0" />
+            android:stepSize="1.0"
+            android:progressTint="@color/yellow"
+            android:progressBackgroundTint="@color/colorTxtSecondary"
+            android:secondaryProgressTint="@color/yellow" />
 
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:hint="@string/hintCommentary">
+            android:hint="@string/hintCommentary"
+            app:boxStrokeColor="@color/colorPrimary"
+            app:hintTextColor="@color/colorPrimary">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/etComment"
@@ -62,7 +70,9 @@
                 android:layout_height="wrap_content"
                 android:inputType="textMultiLine"
                 android:minLines="3"
-                android:gravity="top|start" />
+                android:gravity="top|start"
+                android:textColor="@color/black"/>
+
         </com.google.android.material.textfield.TextInputLayout>
 
         <Button
@@ -71,6 +81,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:text="@string/senEvaluation"
+            android:textColor="@color/white"
             android:backgroundTint="@color/colorPrimary"/>
 
     </LinearLayout>
