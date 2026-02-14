@@ -74,6 +74,7 @@ return [
                 'POST api/feedback' => 'api/feedback/create',
                 'GET api/sessions/<session_id:\d+>/questions' => 'api/question/index',
                 'POST api/questions' => 'api/question/create',
+                'GET api/my-tickets' => 'api/ticket/my-tickets',
             ],
         ],
     ],
