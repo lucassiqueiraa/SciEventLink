@@ -235,6 +235,27 @@ public class SingletonManager {
     }
 
 
+
+    public void setAccessToken(String token) {
+        SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+
+        if (token == null) {
+            editor.clear();
+            editor.apply();
+            Log.d("SingletonManager", "Logout efetuado: Dados limpos.");
+        } else {
+            editor.putString(KEY_TOKEN, token);
+            editor.apply();
+        }
+    }
+
+    public String getUsername() {
+        SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        return prefs.getString(KEY_USERNAME, "Utilizador SciEvent");
+    }
+
+
     private String handleVolleyError(VolleyError error) {
         if (error.networkResponse != null) {
             int code = error.networkResponse.statusCode;

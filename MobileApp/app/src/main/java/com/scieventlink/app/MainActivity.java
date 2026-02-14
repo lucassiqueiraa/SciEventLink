@@ -2,40 +2,94 @@ package com.scieventlink.app;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.OnBackPressedCallback;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import androidx.core.view.GravityCompat;
+import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.navigation.NavigationView;
 import com.scieventlink.app.adapters.EventAdapter;
 import com.scieventlink.app.models.Event;
 import com.scieventlink.app.models.SingletonManager;
 
 import java.util.ArrayList;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
 
     private RecyclerView rvEvents;
     private EventAdapter adapter;
+
+    private DrawerLayout drawerLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // 1. Configurar a Lista (RecyclerView)
+        // 1. Configurar Toolbar
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
+        // 2. Configurar Drawer e Navigation
+        drawerLayout = findViewById(R.id.drawerLayout);
+        NavigationView navigationView = findViewById(R.id.navView);
+        navigationView.setNavigationItemSelectedListener(this);
+
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+                this, drawerLayout, toolbar,
+                R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        drawerLayout.addDrawerListener(toggle);
+        toggle.syncState();
+
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+                    drawerLayout.closeDrawer(GravityCompat.START);
+                } else {
+                    setEnabled(false);
+                    getOnBackPressedDispatcher().onBackPressed();
+                }
+            }
+        });
+
+        try {
+            View headerView = navigationView.getHeaderView(0);
+            TextView tvUsername = headerView.findViewById(R.id.tvUsername);
+
+            String username = SingletonManager.getInstance(this).getUsername();
+
+            if (username != null) {
+                tvUsername.setText(username);
+            } else {
+                tvUsername.setText("Visitante");
+            }
+        } catch (Exception e) {
+            android.util.Log.e("MainActivity", "Erro ao configurar cabeçalho: " + e.getMessage());
+        }
+        // ----------------------------------
+
+        // 4. Configurar Lista
         rvEvents = findViewById(R.id.rvEvents);
         rvEvents.setLayoutManager(new LinearLayoutManager(this));
 
-        // Inicializa o adaptador vazio (Lembra-te: removemos o 'this' do construtor!)
+        // Inicializar adaptador VAZIO primeiro para evitar erro
         adapter = new EventAdapter(new ArrayList<>());
         rvEvents.setAdapter(adapter);
 
-        // 2. Pedir os dados ao "Cozinheiro" (Singleton)
+        // 5. Carregar dados
         carregarEventos();
 
-        // 3. Configurar o clique (para a próxima tarefa)
         adapter.setOnItemClickListener(new EventAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(Event event) {
@@ -46,8 +100,26 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    @Override
+    public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+        int id = item.getItemId();
+
+        if (id == R.id.nav_eventos) {
+        } else if (id == R.id.nav_bilhetes) {
+            Toast.makeText(this, "Bilhetes em breve...", Toast.LENGTH_SHORT).show();
+        } else if (id == R.id.nav_logout) {
+            SingletonManager.getInstance(this).setAccessToken(null);
+            Intent intent = new Intent(this, LoginActivity.class);
+            startActivity(intent);
+            finish();
+        }
+
+        drawerLayout.closeDrawer(GravityCompat.START);
+        return true;
+    }
+
+
     private void carregarEventos() {
-        // Verificação de Segurança: Temos token?
         if (SingletonManager.getInstance(this).getAccessToken() == null) {
             Intent intent = new Intent(this, LoginActivity.class);
             startActivity(intent);
@@ -55,24 +127,17 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        // --- A MAGIA ACONTECE AQUI ---
-        // Chamamos o método do Singleton e passamos o nosso "Pager" (Listener)
         SingletonManager.getInstance(this).getAllEvents(new SingletonManager.EventsListener() {
-
             @Override
             public void onEventsLoaded(ArrayList<Event> events) {
-                // SUCESSO! O Pager vibrou com dados.
-                // Verificamos se a lista está vazia
                 if (events.isEmpty()) {
-                    Toast.makeText(MainActivity.this, "Não há eventos disponíveis.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, "Não há eventos.", Toast.LENGTH_SHORT).show();
                 }
-                // Mandamos os dados para o Adaptador desenhar na tela
                 adapter.updateEvents(events);
             }
 
             @Override
             public void onEventsError(String message) {
-                // ERRO! O Pager vibrou com más notícias.
                 Toast.makeText(MainActivity.this, "Erro: " + message, Toast.LENGTH_LONG).show();
             }
         });
