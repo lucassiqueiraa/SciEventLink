@@ -1,4 +1,4 @@
-package com.scieventlink.app;
+package com.scieventlink.app.fragments;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -14,6 +14,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.google.android.material.textfield.TextInputEditText;
+import com.scieventlink.app.R;
 import com.scieventlink.app.listeners.FeedbackListener;
 import com.scieventlink.app.models.SingletonManager;
 

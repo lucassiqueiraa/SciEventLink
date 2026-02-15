@@ -20,7 +20,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.navigation.NavigationView;
 import com.scieventlink.app.adapters.EventAdapter;
-import com.scieventlink.app.FavoritesFragment;
+import com.scieventlink.app.fragments.FavoritesFragment;
+import com.scieventlink.app.fragments.MyTicketsFragment;
 import com.scieventlink.app.models.Event;
 import com.scieventlink.app.models.SingletonManager;
 
@@ -113,7 +114,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     .replace(R.id.fragment_container, new FavoritesFragment())
                     .commit();
         } else if (id == R.id.nav_bilhetes) {
-            Toast.makeText(this, "Bilhetes em breve...", Toast.LENGTH_SHORT).show();
+            layoutContentMain.setVisibility(View.GONE);
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.fragment_container, new MyTicketsFragment())
+                    .commit();
         } else if (id == R.id.nav_logout) {
             SingletonManager.getInstance(this).setAccessToken(null);
             Intent intent = new Intent(this, LoginActivity.class);

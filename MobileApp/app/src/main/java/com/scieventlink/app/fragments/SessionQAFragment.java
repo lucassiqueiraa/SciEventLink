@@ -1,4 +1,4 @@
-package com.scieventlink.app;
+package com.scieventlink.app.fragments;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;

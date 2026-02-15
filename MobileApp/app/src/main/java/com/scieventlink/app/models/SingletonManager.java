@@ -18,11 +18,13 @@ import com.scieventlink.app.listeners.FavoriteListener;
 import com.scieventlink.app.listeners.FeedbackListener;
 import com.scieventlink.app.listeners.LoginListener;
 import com.scieventlink.app.listeners.QuestionListener;
+import com.scieventlink.app.listeners.TicketListener;
 import com.scieventlink.app.utils.EventJsonParser;
 import com.scieventlink.app.utils.FavoritesJsonParser;
 import com.scieventlink.app.utils.FeedbackJsonParser;
 import com.scieventlink.app.utils.LoginJsonParser;
 import com.scieventlink.app.utils.QuestionJsonParser;
+import com.scieventlink.app.utils.TicketJsonParser;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -35,6 +37,7 @@ import java.util.Map;
 
 public class SingletonManager {
 
+    //region # PROPRIEDADES E CONSTANTES #
     private static SingletonManager instance = null;
     private static RequestQueue volleyQueue = null;
 
@@ -45,12 +48,13 @@ public class SingletonManager {
     private static final String KEY_USERNAME = "username";
     private static final String KEY_USER_ID = "user_id";
 
-
     private Context context;
     private LoginListener loginListener;
 
     private static final int TIMEOUT_MS = 10000;
+    //endregion
 
+    //region # CONSTRUTOR E INSTÂNCIA #
     private SingletonManager(Context context) {
         this.context = context.getApplicationContext();
         volleyQueue = Volley.newRequestQueue(this.context);
@@ -62,15 +66,32 @@ public class SingletonManager {
         }
         return instance;
     }
+    //endregion
 
-    // --- GESTÃO DE TOKEN ---
-
+    //region # GESTÃO DE TOKEN E AUTH #
     public String getAccessToken() {
         SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
         return prefs.getString(KEY_TOKEN, null);
     }
 
-    // --- MÉTODOS GENÉRICOS  ---
+    public void setAccessToken(String token) {
+        SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+
+        if (token == null) {
+            editor.clear();
+            editor.apply();
+            Log.d("SingletonManager", "Logout efetuado: Dados limpos.");
+        } else {
+            editor.putString(KEY_TOKEN, token);
+            editor.apply();
+        }
+    }
+
+    public String getUsername() {
+        SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        return prefs.getString(KEY_USERNAME, "Utilizador SciEvent");
+    }
 
     private Map<String, String> getAuthHeaders() {
         Map<String, String> headers = new HashMap<>();
@@ -87,9 +108,9 @@ public class SingletonManager {
                 DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
                 DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
     }
+    //endregion
 
-    // --- LOGIN ---
-
+    //region # MÉTODOS - API LOGIN #
     public void setLoginListener(LoginListener listener) {
         this.loginListener = listener;
     }
@@ -131,9 +152,9 @@ public class SingletonManager {
                 .putInt(KEY_USER_ID, userId)
                 .apply();
     }
+    //endregion
 
-    // --- EVENTOS ---
-
+    //region # MÉTODOS - API EVENTOS #
     public void getAllEvents(final EventsListener listener) {
         String url = BASE_URL + "/events";
         JsonArrayRequest request = new JsonArrayRequest(Request.Method.GET, url, null,
@@ -170,9 +191,9 @@ public class SingletonManager {
         applyRetryPolicy(request);
         volleyQueue.add(request);
     }
+    //endregion
 
-    // --- FAVORITOS ---
-
+    //region # MÉTODOS - API FAVORITOS #
     public void getFavorites(final FavoriteListener listener) {
         String url = BASE_URL + "/favorites";
         JsonArrayRequest request = new JsonArrayRequest(Request.Method.GET, url, null,
@@ -187,6 +208,7 @@ public class SingletonManager {
         applyRetryPolicy(request);
         volleyQueue.add(request);
     }
+
     public void toggleFavorite(Session session, final FavoriteListener listener) {
         if (session.isFavorite()) removeFavorite(session, listener);
         else addFavorite(session, listener);
@@ -237,9 +259,9 @@ public class SingletonManager {
         applyRetryPolicy(request);
         volleyQueue.add(request);
     }
+    //endregion
 
-    // --- FEEDBACK ---
-
+    //region # MÉTODOS - API FEEDBACK E PERGUNTAS #
     public void sendSessionFeedback(int sessionId, int rating, String comment, final FeedbackListener listener) {
         String url = BASE_URL + "/feedback";
         JSONObject body = FeedbackJsonParser.prepareFeedbackJson(sessionId, rating, comment);
@@ -266,8 +288,6 @@ public class SingletonManager {
         applyRetryPolicy(request);
         volleyQueue.add(request);
     }
-
-    // --- QUESTIONS (Q&A) ---
 
     public void getSessionQuestions(int sessionId, final QuestionsListListener listener) {
         String url = BASE_URL + "/sessions/" + sessionId + "/questions";
@@ -312,28 +332,28 @@ public class SingletonManager {
         applyRetryPolicy(request);
         volleyQueue.add(request);
     }
+    //endregion
 
-
-    public void setAccessToken(String token) {
-        SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = prefs.edit();
-
-        if (token == null) {
-            editor.clear();
-            editor.apply();
-            Log.d("SingletonManager", "Logout efetuado: Dados limpos.");
-        } else {
-            editor.putString(KEY_TOKEN, token);
-            editor.apply();
-        }
+    //region # MÉTODOS - API BILHETES #
+    public void getMyTickets(final TicketListener listener) {
+        String url = BASE_URL + "/my-tickets";
+        JsonArrayRequest request = new JsonArrayRequest(Request.Method.GET, url, null,
+                response -> {
+                    ArrayList<Ticket> tickets = TicketJsonParser.parseTickets(response.toString());
+                    if (listener != null) listener.onTicketsLoaded(tickets);
+                },
+                error -> {
+                    if (listener != null) listener.onError(handleVolleyError(error));
+                }
+        ) {
+            @Override public Map<String, String> getHeaders() { return getAuthHeaders(); }
+        };
+        applyRetryPolicy(request);
+        volleyQueue.add(request);
     }
+    //endregion
 
-    public String getUsername() {
-        SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-        return prefs.getString(KEY_USERNAME, "Utilizador SciEvent");
-    }
-
-
+    //region # UTILITÁRIOS E LISTENERS #
     private String handleVolleyError(VolleyError error) {
         if (error.networkResponse != null) {
             int code = error.networkResponse.statusCode;
@@ -359,4 +379,5 @@ public class SingletonManager {
         void onQuestionsLoaded(ArrayList<Question> questions);
         void onError(String message);
     }
+    //endregion
 }

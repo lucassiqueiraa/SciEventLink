@@ -4,8 +4,8 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
-import com.scieventlink.app.SessionInfoFragment;
-import com.scieventlink.app.SessionQAFragment;
+import com.scieventlink.app.fragments.SessionInfoFragment;
+import com.scieventlink.app.fragments.SessionQAFragment;
 
 
 

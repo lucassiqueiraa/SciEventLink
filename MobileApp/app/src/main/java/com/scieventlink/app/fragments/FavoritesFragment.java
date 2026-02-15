@@ -1,4 +1,4 @@
-package com.scieventlink.app;
+package com.scieventlink.app.fragments;
 
 import android.content.Intent;
 import android.os.Bundle;

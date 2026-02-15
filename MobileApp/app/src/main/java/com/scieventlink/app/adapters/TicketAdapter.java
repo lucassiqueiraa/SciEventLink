@@ -1,5 +1,6 @@
 package com.scieventlink.app.adapters;
 
+import android.app.AlertDialog;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.view.LayoutInflater;
@@ -45,7 +46,6 @@ public class TicketAdapter extends RecyclerView.Adapter<TicketAdapter.TicketView
         holder.tvTypePrice.setText(ticket.getTicketType() + " - " + ticket.getPrice() + "€");
         holder.tvStatus.setText(ticket.getStatus().toUpperCase());
 
-        // Geração do QR Code dinâmico
         try {
             BarcodeEncoder barcodeEncoder = new BarcodeEncoder();
             Bitmap bitmap = barcodeEncoder.encodeBitmap(ticket.getQrData(), BarcodeFormat.QR_CODE, 400, 400);
@@ -54,15 +54,38 @@ public class TicketAdapter extends RecyclerView.Adapter<TicketAdapter.TicketView
             e.printStackTrace();
         }
 
-        // Lógica visual para bilhetes UTILIZADOS (UX)
         if ("used".equalsIgnoreCase(ticket.getStatus())) {
-            holder.itemView.setAlpha(0.5f); // Meio transparente
+            holder.itemView.setAlpha(0.5f);
             holder.tvStatus.setText("UTILIZADO");
             holder.tvStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.GRAY));
         } else {
             holder.itemView.setAlpha(1.0f);
             holder.tvStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(holder.itemView.getContext().getColor(R.color.success)));
         }
+
+        holder.itemView.setOnClickListener(v -> showLargeQrCode(v.getContext(), ticket));
+    }
+
+    private void showLargeQrCode(android.content.Context context, Ticket ticket) {
+        ImageView imageView = new ImageView(context);
+        imageView.setPadding(64, 64, 64, 64);
+        imageView.setAdjustViewBounds(true);
+
+        try {
+            BarcodeEncoder barcodeEncoder = new BarcodeEncoder();
+            Bitmap bitmap = barcodeEncoder.encodeBitmap(ticket.getQrData(), BarcodeFormat.QR_CODE, 800, 800);
+            imageView.setImageBitmap(bitmap);
+        } catch (WriterException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        new AlertDialog.Builder(context)
+                .setTitle(ticket.getEventName())
+                .setMessage("Apresente este código na entrada")
+                .setView(imageView)
+                .setPositiveButton("Fechar", null)
+                .show();
     }
 
     @Override
