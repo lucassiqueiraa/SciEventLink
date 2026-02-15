@@ -50,6 +50,10 @@ AppAsset::register($this);
                     // 'icon' => 'shopping-cart',
                         'url' => ['/registration/index'],
                         'visible' => !Yii::$app->user->isGuest
+                ],                [
+                        'label' => 'Validar Bilhetes',
+                        'url' => ['/checkin/scan'],
+                        'visible' => Yii::$app->user->can('organizer') || Yii::$app->user->can('admin'),
                 ],
         ];
 
