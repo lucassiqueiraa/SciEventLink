@@ -5,8 +5,10 @@ namespace backend\controllers;
 use common\models\Event;
 use common\models\Session;
 use backend\models\SessionSearch;
+use common\models\SessionQuestion;
 use common\models\Venue;
 use Yii;
+use yii\data\ActiveDataProvider;
 use yii\helpers\ArrayHelper;
 use yii\web\Controller;
 use yii\web\ForbiddenHttpException;
@@ -67,8 +69,30 @@ class SessionController extends Controller
      */
     public function actionView($id)
     {
+
+        $model = $this->findModel($id);
+
+        $pendingProvider = new ActiveDataProvider([
+            'query' => SessionQuestion::find()
+                ->where(['session_id' => $id])
+                ->andWhere(['status' => 'pending'])
+                ->orderBy(['created_at' => SORT_ASC]),
+            'pagination' => false,
+        ]);
+
+        $approvedProvider = new ActiveDataProvider([
+            'query' => SessionQuestion::find()
+                ->where(['session_id' => $id])
+                ->andWhere(['status' => 'approved'])
+                ->orderBy(['created_at' => SORT_DESC]),
+            'pagination' => ['pageSize' => 20],
+        ]);
+
+
         return $this->render('view', [
-            'model' => $this->findModel($id),
+            'model' => $model,
+            'pendingProvider' => $pendingProvider,
+            'approvedProvider' => $approvedProvider,
         ]);
     }
 
