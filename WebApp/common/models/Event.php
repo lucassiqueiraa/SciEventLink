@@ -270,12 +270,11 @@ class Event extends \yii\db\ActiveRecord
         $start = strtotime($this->start_date);
         $end = strtotime($this->end_date);
 
-        // Só converte se existirem (para evitar erros em campos vazios)
+        $today = strtotime(date('Y-m-d'));
+
         $subDeadline = $this->submission_deadline ? strtotime($this->submission_deadline) : null;
         $evalDeadline = $this->evaluation_deadline ? strtotime($this->evaluation_deadline) : null;
 
-        // Verificamos qual campo estamos a validar agora ($attribute)
-        // e aplicamos a regra específica para ele.
 
         switch ($attribute) {
 
@@ -289,6 +288,13 @@ class Event extends \yii\db\ActiveRecord
                 if ($subDeadline > $start) {
                     $this->addError($attribute, 'A submissão deve fechar antes do evento começar.');
                 }
+
+                if ($this->isNewRecord || $this->isAttributeChanged('submission_deadline')) {
+                    if ($subDeadline < $today) {
+                        $this->addError($attribute, 'O prazo de submissão não pode ser uma data passada.');
+                    }
+                }
+
                 break;
 
             case 'evaluation_deadline':
@@ -301,8 +307,5 @@ class Event extends \yii\db\ActiveRecord
                 break;
         }
     }
-
-
-
 
 }
