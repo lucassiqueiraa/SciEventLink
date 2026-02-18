@@ -53,6 +53,8 @@ class EventEvaluatorController extends Controller
 
         $this->checkAccess($event);
 
+        $search = Yii::$app->request->get('search');
+
         $evaluatorsProvider = new ActiveDataProvider([
             'query' => EventEvaluators::find()->where(['event_id' => $event_id]),
             'pagination' => ['pageSize' => 20],
@@ -62,10 +64,16 @@ class EventEvaluatorController extends Controller
             ->select('user_id')
             ->where(['event_id' => $event_id]);
 
+        $queryCandidates = User::find()
+            ->where(['status' => 10])
+            ->andWhere(['NOT IN', 'id', $currentEvaluatorsIds]);
+
+        if (!empty($search)) {
+            $queryCandidates->andWhere(['like', 'username', $search]);
+        }
+
         $candidatesProvider = new ActiveDataProvider([
-            'query' => User::find()
-                ->where(['status' => 10])
-                ->andWhere(['NOT IN', 'id', $currentEvaluatorsIds]),
+            'query' => $queryCandidates,
             'pagination' => ['pageSize' => 20],
         ]);
 
@@ -73,6 +81,7 @@ class EventEvaluatorController extends Controller
             'event' => $event,
             'evaluatorsProvider' => $evaluatorsProvider,
             'candidatesProvider' => $candidatesProvider,
+            'search' => $search,
         ]);
     }
 
