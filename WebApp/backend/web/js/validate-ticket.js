@@ -55,8 +55,7 @@ document.addEventListener('DOMContentLoaded', function() {
     async function validateTicket(code) {
         Swal.fire({ title: 'A processar...', didOpen: () => Swal.showLoading() });
 
-        // ATENÇÃO: Confirma se esta URL bate certo com o teu backend
-        const url = `/scieventlink/WebApp/backend/web/index.php?r=api/checkin/validate&code=${code}`;
+        const url = `/scieventlink/WebApp/backend/web/api/checkin/validate?code=${code}`;
 
         try {
             const response = await fetch(url);
