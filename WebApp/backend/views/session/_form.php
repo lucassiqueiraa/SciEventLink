@@ -16,28 +16,25 @@ use yii\widgets\ActiveForm;
     <?php $form = ActiveForm::begin(); ?>
 
     <?php
-    // Se o evento já veio fixo (via URL), mostra escondido
     if ($model->event_id && empty($eventList)) {
         echo $form->field($model, 'event_id')->hiddenInput()->label(false);
         echo '<div class="alert alert-info py-2 mb-3">Evento: <b>' . $model->event->name . '</b></div>';
     }
-    // Se não veio fixo, mostra o Dropdown para escolher
     else {
         echo $form->field($model, 'event_id')->dropDownList(
                 $eventList,
                 [
                         'prompt' => 'Selecione o Evento...',
-                        'id' => 'select-evento-id', // Damos um ID para o JavaScript encontrar
+                        'id' => 'select-evento-id',
                 ]
         );
     }
 
-    // Dropdown de Salas (Venue)
     echo $form->field($model, 'venue_id')->dropDownList(
             $venueList,
             [
                     'prompt' => 'Selecione o Evento primeiro...',
-                    'id' => 'select-venue-id', // ID para o JavaScript preencher
+                    'id' => 'select-venue-id',
             ]
     );
     ?>
@@ -45,17 +42,33 @@ use yii\widgets\ActiveForm;
     <?= $form->field($model, 'title')->textInput(['maxlength' => true]) ?>
 
     <?php
-        if ($model->start_time) {
-            $model->start_time = date('Y-m-d\TH:i', strtotime($model->start_time));
-        }
-        if ($model->end_time) {
-            $model->end_time = date('Y-m-d\TH:i', strtotime($model->end_time));
-        }
+    $minDate = '';
+    $maxDate = '';
+
+    if ($model->event_id && $model->event) {
+        $minDate = date('Y-m-d\T00:00', strtotime($model->event->start_date));
+        $maxDate = date('Y-m-d\T23:59', strtotime($model->event->end_date));
+    } else {
+        $minDate = date('Y-m-d\TH:i');
+    }
+
+    if ($model->start_time) {
+        $model->start_time = date('Y-m-d\TH:i', strtotime($model->start_time));
+    }
+    if ($model->end_time) {
+        $model->end_time = date('Y-m-d\TH:i', strtotime($model->end_time));
+    }
     ?>
 
-    <?= $form->field($model, 'start_time')->input('datetime-local') ?>
+    <?= $form->field($model, 'start_time')->input('datetime-local', [
+            'min' => $minDate,
+            'max' => $maxDate ?: null
+    ]) ?>
 
-    <?= $form->field($model, 'end_time')->input('datetime-local') ?>
+    <?= $form->field($model, 'end_time')->input('datetime-local', [
+            'min' => $minDate,
+            'max' => $maxDate ?: null
+    ]) ?>
     <div class="form-group">
         <?= Html::submitButton('Save', ['class' => 'btn btn-success']) ?>
     </div>
@@ -63,7 +76,6 @@ use yii\widgets\ActiveForm;
     <?php ActiveForm::end(); ?>
 
     <?php
-    // 'depends' garante que o jQuery carrega ANTES do nosso script
     $this->registerJsFile(
             '@web/js/session-form.js',
             ['depends' => [JqueryAsset::class]]

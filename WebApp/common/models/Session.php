@@ -45,6 +45,9 @@ class Session extends \yii\db\ActiveRecord
             [['event_id', 'venue_id'], 'integer'],
             [['start_time', 'end_time'], 'safe'],
             [['title'], 'string', 'max' => 255],
+            ['end_time', 'compare', 'compareAttribute' => 'start_time', 'operator' => '>', 'message' => 'O fim deve ser depois do início.'],
+            ['venue_id', 'validateVenueAvailability'],
+            ['start_time', 'validateEventDates'],
             [['event_id'], 'exist', 'skipOnError' => true, 'targetClass' => Event::class, 'targetAttribute' => ['event_id' => 'id']],
             [['venue_id'], 'exist', 'skipOnError' => true, 'targetClass' => Venue::class, 'targetAttribute' => ['venue_id' => 'id']],
         ];
@@ -146,44 +149,62 @@ class Session extends \yii\db\ActiveRecord
     }
 
     /**
+     * NOVA FUNÇÃO: Verifica se as datas da sessão estão dentro das datas do Evento
+     */
+    public function validateEventDates($attribute, $params)
+    {
+        if ($this->hasErrors()) return;
+
+        $event = $this->event;
+        if ($event) {
+            $eventStart = strtotime($event->start_date);
+            $eventEnd = strtotime($event->end_date . ' 23:59:59');
+
+            $sessionStart = strtotime($this->start_time);
+            $sessionEnd = strtotime($this->end_time);
+
+            if ($sessionStart < $eventStart || $sessionStart > $eventEnd) {
+                $this->addError('start_time', 'A data de início deve estar dentro dos dias do evento (' . date('d/m/Y', $eventStart) . ' a ' . date('d/m/Y', $eventEnd) . ').');
+            }
+
+            if ($sessionEnd > $eventEnd) {
+                $this->addError('end_time', 'A sessão não pode terminar depois do fim do evento.');
+            }
+        }
+    }
+
+    /**
      * Verifica se a sala já está ocupada nesse horário
      */
     public function validateVenueAvailability($attribute, $params)
     {
-        if ($this->hasErrors()) {
-            return;
-        }
+        if ($this->hasErrors()) return;
+
         $conflito = Session::find()
             ->where(['venue_id' => $this->venue_id])
-            ->andWhere(['<>', 'id', $this->id])
+            ->andWhere(['<>', 'id', $this->id ?? 0])
             ->andWhere(['<', 'start_time', $this->end_time])
             ->andWhere(['>', 'end_time', $this->start_time])
             ->exists();
 
         if ($conflito) {
-            $this->addError($attribute, 'Esta sala já está ocupada neste horário!');
+            $this->addError($attribute, 'Esta sala já está ocupada neste horário! Verifique a agenda.');
         }
     }
 
     /**
-     * Limpa e formata as datas para o MySQL antes de salvar
+     * Limpa e formata as datas ANTES da validação para as querys de conflito funcionarem
      */
-    public function beforeSave($insert)
+    public function beforeValidate()
     {
-        if (!parent::beforeSave($insert)) {
-            return false;
-        }
         if (!empty($this->start_time)) {
-            $timestamp = strtotime($this->start_time);
-
-            $this->start_time = date('Y-m-d H:i:s', $timestamp);
+            $this->start_time = date('Y-m-d H:i:s', strtotime($this->start_time));
         }
 
         if (!empty($this->end_time)) {
-            $timestamp = strtotime($this->end_time);
-            $this->end_time = date('Y-m-d H:i:s', $timestamp);
+            $this->end_time = date('Y-m-d H:i:s', strtotime($this->end_time));
         }
 
-        return true;
+        return parent::beforeValidate();
     }
 }
