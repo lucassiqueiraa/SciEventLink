@@ -14,5 +14,13 @@ return [
             'class' => 'yii\rbac\DbManager',
             // 'defaultRoles' => ['guest'],
         ],
+
+        'formatter' => [
+            'class' => 'yii\i18n\Formatter',
+            'locale' => 'pt-PT',
+            'currencyCode' => 'EUR',
+            'decimalSeparator' => ',',
+            'thousandSeparator' => '.',
+        ],
     ],
 ];
